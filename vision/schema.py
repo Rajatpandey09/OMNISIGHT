@@ -1,0 +1,59 @@
+"""Frozen data contract for the vision module (share with Members 1, 2, 4)."""
+from typing import Literal, Optional
+from pydantic import BaseModel, Field
+
+Viewport = Literal["desktop", "mobile"]
+IssueType = Literal[
+    "horizontal_overflow", "offscreen_button", "overlapping_text",
+    "hidden_control", "low_contrast", "other",
+]
+Severity = Literal["low", "medium", "high"]
+# Subset of the shared status vocabulary this module may emit.
+FindingStatus = Literal["detected", "inconclusive"]
+
+
+class ModelFinding(BaseModel):
+    """What the model is asked to return (no scan context; we add that)."""
+    issue_type: IssueType
+    element: Optional[str] = Field(None, description="CSS selector or description")
+    severity: Severity
+    evidence: str = Field(..., min_length=1)
+    impact: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    status: FindingStatus = "detected"
+    suggested_fix: Optional[str] = None
+
+
+class ModelOutput(BaseModel):
+    findings: list[ModelFinding] = []
+    cannot_determine: bool = False
+    notes: Optional[str] = None
+
+
+class Finding(ModelFinding):
+    scan_id: str
+    viewport: Viewport
+
+
+Outcome = Literal["ok", "no_credentials", "provider_error", "invalid_output"]
+
+
+class AnalysisResult(BaseModel):
+    scan_id: str
+    viewport: Viewport
+    provider: str
+    outcome: Outcome
+    findings: list[Finding] = []
+    cannot_determine: bool = False
+    error: Optional[str] = None
+
+
+class PatchProposal(BaseModel):
+    """Reviewable only. Never executed by this module."""
+    scan_id: str
+    file_path: str
+    selector: str
+    diff: str                      # unified diff text
+    rationale: str
+    expected_outcome: str
+    status: Literal["fix_proposed"] = "fix_proposed"
