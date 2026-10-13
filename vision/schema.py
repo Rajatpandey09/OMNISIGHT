@@ -12,6 +12,14 @@ Severity = Literal["low", "medium", "high"]
 FindingStatus = Literal["detected", "inconclusive"]
 
 
+class BoundingBox(BaseModel):
+    """Approximate region on the screenshot, as fractions (0-1) of its size."""
+    x: float = Field(..., ge=0.0, le=1.0)
+    y: float = Field(..., ge=0.0, le=1.0)
+    width: float = Field(..., gt=0.0, le=1.0)
+    height: float = Field(..., gt=0.0, le=1.0)
+
+
 class ModelFinding(BaseModel):
     """What the model is asked to return (no scan context; we add that)."""
     issue_type: IssueType
@@ -22,6 +30,8 @@ class ModelFinding(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
     status: FindingStatus = "detected"
     suggested_fix: Optional[str] = None
+    summary: Optional[str] = Field(None, description="One plain-language sentence for the dashboard")
+    bbox: Optional[BoundingBox] = None
 
 
 class ModelOutput(BaseModel):
