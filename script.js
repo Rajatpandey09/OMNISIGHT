@@ -44,16 +44,38 @@ function clearState(el){el.hidden=true;el.innerHTML=""}
 function setModeUI(){
  const demo=isDemo();$("#modeLabel").textContent=demo?"Demo mode":"Live API";$("#dataBanner").hidden=!demo;$("#footerMode").textContent=demo?"DEMO ENVIRONMENT":"LIVE API";$("#scanModeFoot").textContent=demo?"Demo mode — no network request is made.":`API: ${window.OmniSightAPI.baseUrl}`;
 }
-function renderMetrics(){
- const d=data.dashboard||{};
- const countVerified=data.issues.filter(i=>normalizeState(i.state||i.verification_state||i.status)==="verified").length;
- const countAttention=data.issues.filter(i=>!["verified"].includes(normalizeState(i.state||i.verification_state||i.status))).length;
- $("#metricScans").textContent=val(d.total_scans,data.scans.length);
- $("#metricIssues").textContent=val(d.issues_found,data.issues.length);
- $("#metricVerified").textContent=val(d.verified_resolved,countVerified);
- $("#metricAttention").textContent=val(d.needs_attention,countAttention);
- $("#navIssueCount").textContent=data.issues.length;
+
+function renderMetrics() {
+  const d = data.dashboard || {};
+  const demo = isDemo();
+
+  const countVerified = data.issues.filter(
+    i => normalizeState(i.state || i.verification_state || i.status) === "verified"
+  ).length;
+
+  const countAttention = data.issues.filter(
+    i => normalizeState(i.state || i.verification_state || i.status) !== "verified"
+  ).length;
+
+  $("#metricScans").textContent = demo
+    ? data.scans.length
+    : val(d.total_scans, data.scans.length);
+
+  $("#metricIssues").textContent = demo
+    ? data.issues.length
+    : val(d.issues_found, data.issues.length);
+
+  $("#metricVerified").textContent = demo
+    ? countVerified
+    : val(d.verified_resolved, countVerified);
+
+  $("#metricAttention").textContent = demo
+    ? countAttention
+    : val(d.needs_attention, countAttention);
+
+  $("#navIssueCount").textContent = data.issues.length;
 }
+
 function val(v,fallback){return Number.isFinite(Number(v))&&v!==null?String(v):String(fallback)}
 function scanStatus(s){const raw=String(s||"unknown").toLowerCase();let cls="neutral";if(raw.includes("complete")||raw==="success")cls="good";else if(raw.includes("partial")||raw.includes("pending")||raw.includes("running"))cls="warning";else if(raw.includes("fail")||raw.includes("error"))cls="bad";return `<span class="scan-badge scan-${cls}"><i></i>${esc(s||"Unknown")}</span>`}
 function renderScans(){
