@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true">
+  <div class="scroll-progress-fill"></div></div>
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
     <a class="brand" href="#overview" data-page="overview" aria-label="OmniSight overview">
@@ -92,7 +93,7 @@
   </main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="api.js"></script><script src="script.js"></script>
+<script src="script.js"></script>
 <script>
 (()=>{const bar=document.getElementById("scrollProgress");const update=()=>{const root=document.documentElement;const max=root.scrollHeight-root.clientHeight;bar.style.transform=`scaleX(${max>0?root.scrollTop/max:0})`};window.addEventListener("scroll",update,{passive:true});window.addEventListener("resize",update);update()})();
 </script>
