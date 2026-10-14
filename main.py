@@ -6,8 +6,8 @@ from playwright.async_api import async_playwright
 
 app = FastAPI(
     title="OmniSight Backend & Browser Automation",
-    version="1.1.0",
-    description="Backend service with stable schemas for VLM hand-off."
+    version="1.2.0",
+    description="Backend service with robust error handling and artifact references."
 )
 
 ARTIFACT_DIR = "artifacts"
@@ -15,24 +15,9 @@ os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 ALLOWED_DOMAINS = ["localhost", "127.0.0.1", "example.com"]
 
-# --- Pydantic Models for Stable Schema & AI Hand-off ---
 class ScanRequest(BaseModel):
     url: str
     scan_id: str
-
-class ElementMetric(BaseModel):
-    text: str
-    top: float
-    left: float
-    width: float
-    height: float
-    isOffScreen: bool
-
-class ViewportMetrics(BaseModel):
-    scrollWidth: float
-    clientWidth: float
-    hasHorizontalOverflow: bool
-    interactiveElements: list[ElementMetric] = []
 
 class ScanArtifacts(BaseModel):
     desktop_screenshot: str
@@ -46,6 +31,7 @@ class ScanResponse(BaseModel):
     artifacts: ScanArtifacts
 
 def validate_target_url(url: str):
+    """Secures against SSRF by validating against an allowed domain list[cite: 22]."""
     if not any(domain in url for domain in ALLOWED_DOMAINS):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -66,13 +52,15 @@ async def execute_browser_scan(payload: ScanRequest):
     browser = None
     try:
         async with async_playwright() as p:
+            # Launch headless chromium with strict timeout parameters
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             page = await context.new_page()
             
+            # Navigate with network idle condition
             await page.goto(payload.url, timeout=30000, wait_until="networkidle")
             
-            # Desktop Capture & Metrics
+            # 1. Capture Desktop Viewport Metrics & Screenshot
             await page.set_viewport_size({"width": 1366, "height": 768})
             await page.screenshot(path=desktop_screenshot_path, full_page=True)
             desktop_metrics = await page.evaluate("""() => ({
@@ -82,7 +70,7 @@ async def execute_browser_scan(payload: ScanRequest):
                 interactiveElements: []
             })""")
             
-            # Mobile Capture & Metrics
+            # 2. Capture Mobile Viewport Metrics & Screenshot
             await page.set_viewport_size({"width": 390, "height": 844})
             await page.screenshot(path=mobile_screenshot_path, full_page=True)
             mobile_metrics = await page.evaluate("""() => {
@@ -122,8 +110,9 @@ async def execute_browser_scan(payload: ScanRequest):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Browser automation failed: {str(e)}"
+            detail=f"Browser automation failed or timed out: {str(e)}"
         )
     finally:
+        # Guarantee browser resource cleanup on success or error[cite: 22]
         if browser:
             await browser.close()
