@@ -86,3 +86,9 @@ As Member 4 — QA, Integration & Self-Healing Engineer:
 9. Expected Outcome
 
 A clear and repeatable QA process that helps the OmniSight team detect UI defects, verify fixes, and demonstrate the results with recorded test evidence.
+TC06 — Desktop: Fix verification
+
+* Viewport: Desktop
+* Expected defect: A previously detected UI defect remains after applying a fix.
+* Expected signal: The verification scan reports whether the defect is resolved.
+* Pass criteria: The original defect is no longer detected, and no new UI defects are introduced.
