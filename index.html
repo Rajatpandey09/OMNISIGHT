@@ -93,8 +93,20 @@
   </main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="api.js"></script>
 <script src="script.js"></script>
 <script>
-(()=>{const bar=document.getElementById("scrollProgress");const update=()=>{const root=document.documentElement;const max=root.scrollHeight-root.clientHeight;bar.style.transform=`scaleX(${max>0?root.scrollTop/max:0})`};window.addEventListener("scroll",update,{passive:true});window.addEventListener("resize",update);update()})();
+(() => {
+const bar = document.getElementById("scrollProgress");
+const update = () => {
+  const root = document.documentElement;
+  const max = root.scrollHeight - root.clientHeight;
+  bar.style.transform = `scaleX(${max > 0 ? root.scrollTop / max : 0})`;
+};
+window.addEventListener("scroll", update, { passive: true });
+window.addEventListener("resize", update);
+update();
+})();
 </script>
-</body></html>
+</body>
+</html>

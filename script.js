@@ -1,4 +1,4 @@
-﻿/* OmniSight Member 1 frontend. Demo fixtures are isolated and visibly labelled. */
+/* OmniSight Member 1 frontend. Demo fixtures are isolated and visibly labelled. */
 (()=>{
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -21,12 +21,52 @@ const demoIssues=[
 {id:"OS-102",title:"Hero media exceeds content width",type:"Layout",viewport:"Mobile",severity:"Medium",description:"Hero media extends past the content column and may cause horizontal page overflow.",state:"detected",scan_id:"DEMO-014",before_screenshot:"",after_screenshot:"",suggested_css:"img.hero-media { max-width: 100%; height: auto; object-fit: cover; }",verification_outcome:"Not run",evidence:"The illustrative mobile capture indicates the image extends beyond its parent container."},
 {id:"OS-103",title:"Secondary action has weak contrast",type:"Accessibility",viewport:"Desktop",severity:"High",description:"The secondary action may not meet the intended text/background contrast.",state:"proposed",scan_id:"DEMO-013",before_screenshot:"",after_screenshot:"",suggested_css:".button-secondary { color: #263246; background: #f4f6fa; }",verification_outcome:"Awaiting approval",evidence:"Check the actual computed colors and applicable contrast threshold before approving this proposal."},
 {id:"OS-104",title:"Product cards use inconsistent corner radius",type:"Visual",viewport:"Desktop",severity:"Low",description:"Card corners use different radius values across the same component group.",state:"applied",scan_id:"DEMO-013",before_screenshot:"",after_screenshot:"",suggested_css:".product-card { border-radius: 12px; }",verification_outcome:"Verification not yet confirmed",evidence:"The demo finding shows inconsistent card radii. The applied change remains unverified until a follow-up scan succeeds."},
-{id:"OS-105",title:"Horizontal page scrolling at 390px",type:"Layout",viewport:"Mobile",severity:"High",description:"A child element appears wider than the viewport, creating sideways scrolling.",state:"inconclusive",scan_id:"DEMO-012",before_screenshot:"",after_screenshot:"",suggested_css:"/* Inspect the overflowing child width; avoid hiding overflow globally. */",verification_outcome:"Inconclusive ΓÇö more evidence required",evidence:"The sample result does not identify the responsible element with sufficient confidence."},
+{id:"OS-105",title:"Horizontal page scrolling at 390px",type:"Layout",viewport:"Mobile",severity:"High",description:"A child element appears wider than the viewport, creating sideways scrolling.",state:"inconclusive",scan_id:"DEMO-012",before_screenshot:"",after_screenshot:"",suggested_css:"/* Inspect the overflowing child width; avoid hiding overflow globally. */",verification_outcome:"Inconclusive — more evidence required",evidence:"The sample result does not identify the responsible element with sufficient confidence."},
 {id:"OS-106",title:"Form submit control is not visible",type:"Visibility",viewport:"Desktop",severity:"Medium",description:"The expected submit control is absent from the available capture.",state:"failed",scan_id:"DEMO-012",before_screenshot:"",after_screenshot:"",suggested_css:".form-submit { display: inline-flex; visibility: visible; }",verification_outcome:"Verification failed",evidence:"The illustrative follow-up did not confirm that the submit control became visible."}
 ];
 let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0;
+
+const DEMO_STORAGE_KEY = "omnisight.demo.scans.v1";
+
+function readSavedDemoScans() {
+  try {
+    const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+    const saved = raw ? JSON.parse(raw) : [];
+    return Array.isArray(saved) ? saved : [];
+  } catch (error) {
+    console.warn("Demo scan history could not be loaded:", error);
+    return [];
+  }
+}
+
+function saveDemoScans(scans) {
+  try {
+    const fixtureIds = new Set(demoScans.map(scan => scan.id));
+    const savedScans = scans.filter(scan => !fixtureIds.has(scan.id));
+
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify(savedScans.slice(0, 20))
+    );
+
+    return true;
+  } catch (error) {
+    console.warn("Demo scan history could not be saved:", error);
+    return false;
+  }
+}
+
+function nextDemoScanId(scans) {
+  const highest = scans.reduce((max, scan) => {
+    const match = String(scan.id || "").match(/^DEMO-(\d+)$/);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+
+  return `DEMO-${String(highest + 1).padStart(3, "0")}`;
+}
+
 const isDemo=()=>$("#demoMode").checked;
-const stateOf=i=>String(i.state||i.verification_state||i.status||"detected").toLowerCase().replace(/[\s-]+/g,"_").includes("verified")?"verified":normalizeState(i.state||i.verification_state||i.status);
+// const stateOf = (i) => String(i.state || i.verification_state || i.status || "detected").toLowerCase().replace(/[\s-]+/g, "_").includes("verified") ? "verified" : normalizeState(i.state || i.verification_state || i.status);
 function normalizeState(raw){
  const s=String(raw||"detected").toLowerCase().replace(/[\s-]+/g,"_");
  if(["verified","verified_resolved","resolved","passed"].includes(s))return "verified";
@@ -39,10 +79,10 @@ function normalizeState(raw){
 function badge(raw){const key=normalizeState(raw),m=stateMeta[key];return `<span class="state-badge state-${m.className}"><i></i>${m.label}</span>`}
 function severity(raw){const s=String(raw||"Unknown").toLowerCase();return `<span class="severity severity-${esc(s)}">${esc(raw||"Unknown")}</span>`}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3200)}
-function setState(el,kind,title,message){el.hidden=false;el.className=`state-panel state-${kind}`;el.innerHTML=`<span class="state-symbol">${kind==="loading"?"Γùî":kind==="error"?"!":kind==="empty"?"ΓÇö":"i"}</span><div><b>${esc(title)}</b><p>${esc(message)}</p></div>${kind==="error"?'<button class="text-link retry-button">Try again Γå╗</button>':""}`}
+function setState(el,kind,title,message){el.hidden=false;el.className=`state-panel state-${kind}`;el.innerHTML=`<span class="state-symbol">${kind==="loading"?"…":kind==="error"?"!":kind==="empty"?"—":"i"}</span><div><b>${esc(title)}</b><p>${esc(message)}</p></div>${kind==="error"?'<button class="text-link retry-button">Try again →</button>':""}`}
 function clearState(el){el.hidden=true;el.innerHTML=""}
 function setModeUI(){
- const demo=isDemo();$("#modeLabel").textContent=demo?"Demo mode":"Live API";$("#dataBanner").hidden=!demo;$("#footerMode").textContent=demo?"DEMO ENVIRONMENT":"LIVE API";$("#scanModeFoot").textContent=demo?"Demo mode ΓÇö no network request is made.":`API: ${window.OmniSightAPI.baseUrl}`;
+ const demo=isDemo();$("#modeLabel").textContent=demo?"Demo mode":"Live API";$("#dataBanner").hidden=!demo;$("#footerMode").textContent=demo?"DEMO ENVIRONMENT":"LIVE API";$("#scanModeFoot").textContent=demo?"Demo mode — no network request is made.":`API: ${window.OmniSightAPI.baseUrl}`;
 }
 
 function renderMetrics() {
@@ -80,8 +120,8 @@ function val(v,fallback){return Number.isFinite(Number(v))&&v!==null?String(v):S
 function scanStatus(s){const raw=String(s||"unknown").toLowerCase();let cls="neutral";if(raw.includes("complete")||raw==="success")cls="good";else if(raw.includes("partial")||raw.includes("pending")||raw.includes("running"))cls="warning";else if(raw.includes("fail")||raw.includes("error"))cls="bad";return `<span class="scan-badge scan-${cls}"><i></i>${esc(s||"Unknown")}</span>`}
 function renderScans(){
  const rows=data.scans.slice(0,5);
- $("#recentScans").innerHTML=rows.map(s=>`<tr><td><div class="target-cell"><span class="target-mark">ΓùÄ</span><span><b>${esc(s.target||s.url||s.target_url||"Unnamed target")}</b><small>${esc(s.id||s.scan_id||"Scan")}</small></span></div></td><td>${esc(s.created_at||s.started_at||s.date||"ΓÇö")}</td><td>${esc((s.viewports||s.viewport_sizes||[]).join(" ┬╖ ")||s.viewport||"ΓÇö")}</td><td>${scanStatus(s.status||s.state)}</td><td>${esc(s.issue_count??s.issues_found??"ΓÇö")}</td></tr>`).join("");
- $("#historyRows").innerHTML=data.scans.map(s=>`<tr><td><b>${esc(s.id||s.scan_id||"ΓÇö")}</b></td><td>${esc(s.target||s.url||s.target_url||"ΓÇö")}</td><td>${esc(s.created_at||s.started_at||s.date||"ΓÇö")}</td><td>${esc((s.viewports||s.viewport_sizes||[]).join(" ┬╖ ")||s.viewport||"ΓÇö")}</td><td>${scanStatus(s.status||s.state)}</td><td>${esc(s.issue_count??s.issues_found??"ΓÇö")}</td></tr>`).join("");
+ $("#recentScans").innerHTML=rows.map(s=>`<tr><td><div class="target-cell"><span class="target-mark">•</span><span><b>${esc(s.target||s.url||s.target_url||"Unnamed target")}</b><small>${esc(s.id||s.scan_id||"Scan")}</small></span></div></td><td>${esc(s.created_at||s.started_at||s.date||"—")}</td><td>${esc((s.viewports||s.viewport_sizes||[]).join("  ·  ")||s.viewport||"—")}</td><td>${scanStatus(s.status||s.state)}</td><td>${esc(s.issue_count??s.issues_found??"—")}</td></tr>`).join("");
+ $("#historyRows").innerHTML=data.scans.map(s=>`<tr><td><b>${esc(s.id||s.scan_id||"—")}</b></td><td>${esc(s.target||s.url||s.target_url||"—")}</td><td>${esc(s.created_at||s.started_at||s.date||"—")}</td><td>${esc((s.viewports||s.viewport_sizes||[]).join("  ·  ")||s.viewport||"—")}</td><td>${scanStatus(s.status||s.state)}</td><td>${esc(s.issue_count??s.issues_found??"—")}</td></tr>`).join("");
  $("#recentEmpty").hidden=rows.length>0;$("#historyEmpty").hidden=data.scans.length>0;
 }
 function renderStatus(){
@@ -90,27 +130,56 @@ function renderStatus(){
  $("#statusBreakdown").innerHTML=counts.map(c=>`<div class="status-segment segment-${c.key}" style="width:${c.count/total*100}%"></div>`).join("");
  $("#statusLegend").innerHTML=counts.map(c=>`<div><i class="key-dot ${c.key}"></i><span>${stateMeta[c.key].label}</span><b>${c.count}</b></div>`).join("");
  const outstanding=data.issues.filter(i=>normalizeState(i.state||i.verification_state||i.status)!=="verified").sort((a,b)=>severityRank(b.severity)-severityRank(a.severity)).slice(0,3);
- $("#priorityIssues").innerHTML=outstanding.map(i=>`<button class="priority-row" data-review="${esc(i.id||i.issue_id)}"><span class="priority-mark">${esc((i.title||"I").slice(0,1))}</span><span class="priority-copy"><b>${esc(i.title||"Untitled issue")}</b><small>${esc(i.viewport||i.viewport_size||"Viewport unknown")} ┬╖ ${esc(i.type||i.issue_type||"Issue")}</small></span>${severity(i.severity)}<span class="row-arrow">Γåù</span></button>`).join("");
+ $("#priorityIssues").innerHTML=outstanding.map(i=>`<button class="priority-row" data-review="${esc(i.id||i.issue_id)}"><span class="priority-mark">${esc((i.title||"I").slice(0,1))}</span><span class="priority-copy"><b>${esc(i.title||"Untitled issue")}</b><small>${esc(i.viewport||i.viewport_size||"Viewport unknown")}  ·  ${esc(i.type||i.issue_type||"Issue")}</small></span>${severity(i.severity)}<span class="row-arrow">→</span></button>`).join("");
  $("#priorityEmpty").hidden=outstanding.length>0;
 }
 function severityRank(s){return ({critical:5,high:4,medium:3,low:2,info:1})[String(s||"").toLowerCase()]||0}
 function renderIssues(){
  const filter=$("#statusFilter").value,q=$("#globalSearch").value.trim().toLowerCase();
  const list=data.issues.filter(i=>{const st=normalizeState(i.state||i.verification_state||i.status);return(filter==="all"||st===filter)&&(!q||`${i.id} ${i.title} ${i.type} ${i.viewport} ${i.description}`.toLowerCase().includes(q))});
- $("#issueSummary").textContent=`${list.length} issue${list.length===1?"":"s"} ┬╖ ${isDemo()?"sample records":"backend response"}`;
+ $("#issueSummary").textContent=`${list.length} issue${list.length===1?"":"s"}  ·  ${isDemo()?"sample records":"backend response"}`;
  $("#issueList").innerHTML=list.map(i=>{
  const id=i.id||i.issue_id;const view=i.viewport||i.viewport_size||"Not specified";const type=i.type||i.issue_type||"Unclassified";
- return `<article class="issue-row"><div class="issue-thumb" aria-hidden="true"><div class="thumb-top"><i></i><i></i><i></i></div><div class="thumb-content"><span></span><span></span><i></i></div></div><div class="issue-main"><div class="issue-title-line"><h3>${esc(i.title||"Untitled issue")}</h3>${severity(i.severity)}</div><p>${esc(i.description||i.summary||"No description was supplied by the backend.")}</p><div class="issue-meta"><span>${esc(id||"ID unavailable")}</span><span>${esc(type)}</span><span>${esc(view)}</span></div><div class="issue-states">${badge(i.state||i.verification_state||i.status)}<span class="evidence-hint">${i.before_screenshot||i.screenshot_url||i.evidence_screenshot?"Evidence available":"Evidence unavailable"}</span></div></div><div class="issue-actions"><button class="button button-small button-light" data-review="${esc(id)}">Review issue Γåù</button></div></article>`;
+ return `<article class="issue-row"><div class="issue-thumb" aria-hidden="true"><div class="thumb-top"><i></i><i></i><i></i></div><div class="thumb-content"><span></span><span></span><i></i></div></div><div class="issue-main"><div class="issue-title-line"><h3>${esc(i.title||"Untitled issue")}</h3>${severity(i.severity)}</div><p>${esc(i.description||i.summary||"No description was supplied by the backend.")}</p><div class="issue-meta"><span>${esc(id||"ID unavailable")}</span><span>${esc(type)}</span><span>${esc(view)}</span></div><div class="issue-states">${badge(i.state||i.verification_state||i.status)}<span class="evidence-hint">${i.before_screenshot||i.screenshot_url||i.evidence_screenshot?"Evidence available":"Evidence unavailable"}</span></div></div><div class="issue-actions"><button class="button button-small button-light" data-review="${esc(id)}">Review issue →</button></div></article>`;
  }).join("");
  $("#issuesState").hidden=list.length>0; if(!list.length)setState($("#issuesState"),"empty","No matching issues","Try a different status filter or search term.");
 }
 function renderAll(){renderMetrics();renderScans();renderStatus();renderIssues()}
 async function loadData(){
  const generation=++loadGeneration;setModeUI();
- if(isDemo()){
-  data={scans:demoScans.map(x=>({...x})),issues:demoIssues.map(x=>({...x})),targets:[{id:"demo-overflow",name:"Demo target ΓÇö mobile overflow"},{id:"demo-hidden",name:"Demo target ΓÇö hidden control"}],dashboard:{total_scans:demoScans.length,issues_found:demoIssues.length,verified_resolved:0,needs_attention:demoIssues.length}};
-  renderAll();fillTargets();clearState($("#dashboardState"));return;
- }
+if (isDemo()) {
+  const savedScans = readSavedDemoScans();
+
+  const combinedScans = [
+    ...savedScans,
+    ...demoScans.map(scan => ({ ...scan }))
+  ];
+
+  const uniqueScans = [
+    ...new Map(
+      combinedScans.map(scan => [String(scan.id), scan])
+    ).values()
+  ];
+
+  data = {
+    scans: uniqueScans.slice(0, 20),
+    issues: demoIssues.map(issue => ({ ...issue })),
+    targets: [
+      { id: "demo-overflow", name: "Demo target — mobile overflow" },
+      { id: "demo-hidden", name: "Demo target — hidden control" }
+    ],
+    dashboard: {
+      total_scans: uniqueScans.length,
+      issues_found: demoIssues.length,
+      verified_resolved: 0,
+      needs_attention: demoIssues.length
+    }
+  };
+  renderAll();
+  fillTargets();
+    clearState($("#dashboardState"));
+  return;
+}
  setState($("#dashboardState"),"loading","Loading dashboard","Requesting current scan and issue data from the backend.");
  $("#metricGrid").classList.add("is-loading");
  try{
@@ -157,34 +226,52 @@ function openReview(id){
  const state=normalizeState(issue.state||issue.verification_state||issue.status);
  const before=issue.before_screenshot||issue.screenshot_url||issue.evidence_screenshot||issue.evidence?.before_screenshot||"";
  const after=issue.after_screenshot||issue.verification_screenshot||issue.evidence?.after_screenshot||"";
- $("#reviewContent").innerHTML=`<section class="surface review-main"><div class="review-title"><div><span class="eyebrow">${esc(issue.id||issue.issue_id||"ISSUE")} ┬╖ ${esc(issue.type||issue.issue_type||"Finding")}</span><h2>${esc(issue.title||"Untitled issue")}</h2></div>${badge(state)}</div><p class="review-description">${esc(issue.description||issue.summary||"No description provided.")}</p><div class="review-meta">${severity(issue.severity)}<span class="meta-pill">${esc(issue.viewport||issue.viewport_size||"Viewport unknown")}</span><span class="meta-pill">Scan: ${esc(issue.scan_id||"Not supplied")}</span></div><div class="review-section"><div class="section-heading"><div><span class="eyebrow">VISUAL EVIDENCE</span><h2>Before &amp; after</h2></div><span class="mini-label">Real backend images when available</span></div><div class="comparison-grid">${imagePanel(before,"Before")}${imagePanel(after,"After / verification")}</div><p class="image-caption">Missing screenshots are shown as placeholders, never replaced with invented evidence.</p></div><div class="review-section"><span class="eyebrow">PROPOSED CHANGE</span><h2>Suggested CSS</h2><pre class="css-proposal">${esc(issue.suggested_css||issue.proposed_css||"No CSS proposal supplied by the backend.")}</pre><p class="image-caption">Review this change before approval. This UI does not apply CSS directly to the target site.</p></div><div class="review-section"><span class="eyebrow">VERIFICATION OUTCOME</span><h2>Current result</h2><div class="verification-box state-${state}"><span class="verification-icon">${state==="verified"?"Γ£ô":state==="failed"?"!":state==="inconclusive"?"?":"Γù╖"}</span><div><b>${esc(issue.verification_outcome||stateMeta[state].label)}</b><p>${esc(issue.evidence||issue.verification_details||"No additional verification details supplied.")}</p></div></div></div><div class="review-actions" id="reviewActions"></div></section><aside class="surface review-aside"><span class="eyebrow">REVIEW CHECKLIST</span><h2>Before you approve</h2><ul class="checklist"><li><span>01</span><div><b>Confirm the issue</b><small>Check the viewport and supporting evidence.</small></div></li><li><span>02</span><div><b>Inspect the CSS</b><small>Make sure the proposal is scoped and safe.</small></div></li><li><span>03</span><div><b>Verify separately</b><small>Approval is not the same as a successful fix.</small></div></li></ul><div class="human-note"><b>Human approval required</b><p>Only a successful follow-up verification may move an issue to Verified.</p></div></aside>`;
+ $("#reviewContent").innerHTML=`<section class="surface review-main"><div class="review-title"><div><span class="eyebrow">${esc(issue.id||issue.issue_id||"ISSUE")}  ·  ${esc(issue.type||issue.issue_type||"Finding")}</span><h2>${esc(issue.title||"Untitled issue")}</h2></div>${badge(state)}</div><p class="review-description">${esc(issue.description||issue.summary||"No description provided.")}</p><div class="review-meta">${severity(issue.severity)}<span class="meta-pill">${esc(issue.viewport||issue.viewport_size||"Viewport unknown")}</span><span class="meta-pill">Scan: ${esc(issue.scan_id||"Not supplied")}</span></div><div class="review-section"><div class="section-heading"><div><span class="eyebrow">VISUAL EVIDENCE</span><h2>Before &amp; after</h2></div><span class="mini-label">Real backend images when available</span></div><div class="comparison-grid">${imagePanel(before,"Before")}${imagePanel(after,"After / verification")}</div><p class="image-caption">Missing screenshots are shown as placeholders, never replaced with invented evidence.</p></div><div class="review-section"><span class="eyebrow">PROPOSED CHANGE</span><h2>Suggested CSS</h2><pre class="css-proposal">${esc(issue.suggested_css||issue.proposed_css||"No CSS proposal supplied by the backend.")}</pre><p class="image-caption">Review this change before approval. This UI does not apply CSS directly to the target site.</p></div><div class="review-section"><span class="eyebrow">VERIFICATION OUTCOME</span><h2>Current result</h2><div class="verification-box state-${state}"><span class="verification-icon">${state==="verified"?"✓":state==="failed"?"!":state==="inconclusive"?"?":"•"}</span><div><b>${esc(issue.verification_outcome||stateMeta[state].label)}</b><p>${esc(issue.evidence||issue.verification_details||"No additional verification details supplied.")}</p></div></div></div><div class="review-actions" id="reviewActions"></div></section><aside class="surface review-aside"><span class="eyebrow">REVIEW CHECKLIST</span><h2>Before you approve</h2><ul class="checklist"><li><span>01</span><div><b>Confirm the issue</b><small>Check the viewport and supporting evidence.</small></div></li><li><span>02</span><div><b>Inspect the CSS</b><small>Make sure the proposal is scoped and safe.</small></div></li><li><span>03</span><div><b>Verify separately</b><small>Approval is not the same as a successful fix.</small></div></li></ul><div class="human-note"><b>Human approval required</b><p>Only a successful follow-up verification may move an issue to Verified.</p></div></aside>`;
  const actions=$("#reviewActions");
- if(state==="proposed")actions.innerHTML='<button class="button button-dark" id="approveFix">Approve proposal Γåù</button><button class="button button-light" id="rejectFix">Reject proposal</button>';
- else if(state==="applied")actions.innerHTML='<button class="button button-dark" id="verifyFix">Run verification Γåù</button>';
+if (state === "proposed") actions.innerHTML = '<button class="button button-dark" id="approveFix">Approve proposal →</button><button class="button button-light" id="rejectFix">Reject proposal</button>';
+else if (state === "applied") actions.innerHTML = '<button class="button button-dark" id="verifyFix">Run verification →</button>';
+
  else actions.innerHTML='<span class="action-note">Available actions depend on the current backend state.</span>';
 }
 async function handleScan(e){
  e.preventDefault();const desktop=$("#desktopViewport").checked,mobile=$("#mobileViewport").checked;
  if(!desktop&&!mobile){$("#scanFeedback").textContent="Select at least one viewport.";return}
  if(!$("#target").value){$("#scanFeedback").textContent="Choose a configured target first.";return}
- const btn=$("#runScanButton");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Request pendingΓÇª';$("#scanFeedback").textContent="";
+ const btn=$("#runScanButton");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Request pending…';$("#scanFeedback").textContent="";
  try{
-  if(isDemo()){
-   const scan={id:`DEMO-${String(Date.now()).slice(-5)}`,target:$("#target").selectedOptions[0]?.textContent||"Demo target",created_at:"Just now",viewports:[desktop?"Desktop":null,mobile?"Mobile":null].filter(Boolean),status:"demo ΓÇö not executed",issue_count:0};
-   data.scans.unshift(scan);data.scans=data.scans.slice(0,20);renderAll();$("#scanFeedback").textContent="Demo request recorded locally only. No website was accessed and no scan was run.";toast("Demo record created ΓÇö no real scan executed.");navigate("history");
+if (isDemo()) {
+  const scan = {
+    id: nextDemoScanId(data.scans),
+    target: $("#target").selectedOptions[0]?.textContent || "Demo target",
+    created_at: new Date().toLocaleString(),
+    viewports: [
+      desktop ? "Desktop" : null,
+      mobile ? "Mobile" : null
+    ].filter(Boolean),
+    status: "demo not executed",
+    issue_count: 0
+  };
+
+  data.scans.unshift(scan);
+  data.scans = data.scans.slice(0, 20);
+  saveDemoScans(data.scans);
+  renderAll();
+
+
+   $("#scanFeedback").textContent="Demo request recorded locally only. No website was accessed and no scan was run.";toast("Demo record created  no real scan executed.");navigate("history");
   }else{
    const result=await window.OmniSightAPI.createScan({target_id:$("#target").value,viewports:[desktop?"desktop":null,mobile?"mobile":null].filter(Boolean)});
    $("#scanFeedback").textContent=`Scan request accepted${result?.id||result?.scan_id?` (${result.id||result.scan_id})`:""}. Refreshing backend data.`;toast("Scan request sent to backend.");await loadData();navigate("history");
   }
  }catch(error){$("#scanFeedback").textContent=`Scan request failed: ${error.message}`;toast("Scan request failed.");}
- finally{btn.disabled=false;btn.innerHTML='Run scan <span>Γåù</span>'}
+ finally{btn.disabled=false;btn.innerHTML='Run scan <span>→</span>'}
 }
 async function reviewAction(action){
  if(!currentReview)return;const id=currentReview.id||currentReview.issue_id,buttons=$$("#reviewActions button");buttons.forEach(b=>b.disabled=true);
  try{
   if(isDemo()){
    const i=data.issues.find(x=>String(x.id||x.issue_id)===String(id));
-   if(action==="approve"){i.state="applied";i.verification_outcome="Approved in demo only ΓÇö no code changed."}
+   if(action==="approve"){i.state="applied";i.verification_outcome="Approved in demo only — no code changed."}
    else if(action==="reject"){i.state="detected";i.verification_outcome="Proposal rejected in demo only."}
    else {i.state="inconclusive";i.verification_outcome="No verification executed in demo mode."}
    renderAll();openReview(id);toast(action==="verify"?"Demo verification was not run.":"Demo state updated locally only.");return;
