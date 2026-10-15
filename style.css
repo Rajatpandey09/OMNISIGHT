@@ -3003,3 +3003,713 @@ tbody tr:last-child td {
     transform: none;
   }
 }
+/* Mobile fixes for OmniSight issue cards and history tables */
+@media (max-width: 700px) {
+  .issue-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px 14px;
+    min-width: 0;
+  }
+
+  .issue-thumb {
+    display: none;
+  }
+
+  .issue-main {
+    min-width: 0;
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .issue-title-line {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .issue-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .issue-actions {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .issue-actions .button {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrap table {
+    min-width: 560px;
+  }
+}
+
+/* ==========================================================================
+   OmniSight — Final responsive overrides
+   Append at the very end of style.css.
+   Preserves existing theme, colors, gradients and desktop design.
+   ========================================================================== */
+
+/* Prevent grid and flex children from forcing their parents wider */
+.app-shell,
+.main,
+.page,
+.surface,
+.dashboard-grid,
+.scan-layout,
+.review-grid,
+.metric-grid,
+.issue-list,
+.issue-row,
+.issue-main,
+.review-main,
+.review-aside,
+.scan-form,
+.scan-aside,
+.table-wrap {
+  min-width: 0;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+pre,
+code {
+  max-width: 100%;
+}
+
+pre,
+.css-proposal {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Tables scroll inside their own container, never across the whole page */
+.table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap table {
+  width: 100%;
+  min-width: 560px;
+  table-layout: auto;
+}
+
+.table-wrap th,
+.table-wrap td {
+  vertical-align: top;
+}
+
+.table-wrap td {
+  overflow-wrap: break-word;
+}
+
+.table-wrap td:first-child b,
+.table-wrap td:first-child small {
+  overflow-wrap: anywhere;
+}
+
+/* Allow long identifiers to wrap without widening cards */
+.target-cell,
+.target-cell > span,
+.target-cell b,
+.target-cell small,
+.priority-copy,
+.issue-main,
+.issue-title-line,
+.issue-meta,
+.review-title,
+.review-meta,
+.verification-box,
+.app-footer {
+  min-width: 0;
+}
+
+.target-cell b,
+.target-cell small,
+.issue-title-line h3,
+.issue-main > p,
+.issue-meta span,
+.review-description,
+.verification-box p,
+.app-footer {
+  overflow-wrap: anywhere;
+}
+
+/* Header: allow the existing controls to wrap instead of overlapping */
+.topbar,
+.breadcrumbs,
+.top-actions {
+  min-width: 0;
+}
+
+.breadcrumbs {
+  flex: 1 1 160px;
+}
+
+.top-actions {
+  max-width: 100%;
+}
+
+.searchbox {
+  min-width: 0;
+}
+
+.searchbox input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Dashboard panels and metrics */
+.dashboard-grid,
+.scan-layout,
+.review-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metric-card,
+.recent-surface,
+.status-surface {
+  min-width: 0;
+}
+
+/* Issue and review content should not create horizontal overflow */
+.issue-row {
+  min-width: 0;
+}
+
+.issue-actions {
+  min-width: 0;
+}
+
+.issue-actions .button,
+.review-actions .button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.comparison-grid {
+  min-width: 0;
+}
+
+.screenshot-frame,
+.screenshot-placeholder {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.screenshot-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.review-actions {
+  min-width: 0;
+}
+
+/* Forms must shrink to fit their available column */
+.scan-form,
+.scan-aside,
+.scan-form label,
+.scan-form input,
+.scan-form select,
+.scan-form textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.scan-form input:not([type="radio"]):not([type="checkbox"]),
+.scan-form select,
+.scan-form textarea {
+  width: 100%;
+}
+
+.button {
+  max-width: 100%;
+}
+
+/* Tablet layouts */
+@media (max-width: 1024px) {
+  .main {
+    min-width: 0;
+  }
+
+  .dashboard-grid,
+  .scan-layout,
+  .review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recent-surface,
+  .status-surface {
+    padding: 24px;
+  }
+}
+
+/* Mobile navigation, header and page spacing */
+@media (max-width: 700px) {
+  .main {
+    width: 100%;
+    max-width: 100%;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .topbar {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .mobile-menu,
+  .icon-button {
+    flex: 0 0 44px;
+  }
+
+  .breadcrumbs {
+    flex: 1 1 calc(100% - 60px);
+    margin-left: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .top-actions {
+    display: flex;
+    flex: 1 1 100%;
+    width: 100%;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .searchbox {
+    flex: 1 1 150px;
+    width: auto;
+    min-width: 0;
+  }
+
+  .mode-switch {
+    max-width: 100%;
+    margin-left: 0;
+    white-space: normal;
+  }
+
+  .page-heading {
+    min-width: 0;
+  }
+
+  .page-heading h1,
+  #page-overview .page-heading h1 {
+    overflow-wrap: anywhere;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-card {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .metric-card > strong {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-grid,
+  .scan-layout,
+  .review-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recent-surface,
+  .status-surface,
+  .scan-form,
+  .scan-aside,
+  .review-main,
+  .review-aside {
+    padding: 16px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .section-heading > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .issue-list {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .issue-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px 12px;
+  }
+
+  .issue-thumb {
+    display: none;
+  }
+
+  .issue-main,
+  .issue-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .issue-title-line {
+    align-items: flex-start;
+  }
+
+  .issue-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .issue-actions .button {
+    width: 100%;
+  }
+
+  .viewport-options,
+  .comparison-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review-title {
+    align-items: flex-start;
+  }
+
+  .review-title h2 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .review-actions {
+    align-items: stretch;
+  }
+
+  .review-actions .button {
+    width: 100%;
+  }
+
+  .status-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-footer {
+    line-height: 1.6;
+  }
+}
+
+/* Narrow phones: 320px–380px */
+@media (max-width: 380px) {
+  .main {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .topbar {
+    gap: 8px;
+  }
+
+  .metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .metric-card {
+    min-height: 145px;
+  }
+
+  .recent-surface,
+  .status-surface,
+  .scan-form,
+  .scan-aside,
+  .review-main,
+  .review-aside {
+    padding: 12px;
+  }
+
+  .section-heading h2 {
+    font-size: 23px;
+  }
+
+  .status-legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .table-wrap table {
+    min-width: 520px;
+  }
+}
+
+/* Keyboard and touch accessibility */
+@media (hover: none) {
+  .button:hover,
+  .surface:hover,
+  .issue-row:hover,
+  .metric-card:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .topbar,
+  .issue-row,
+  .metric-card,
+  .surface {
+    scroll-behavior: auto;
+  }
+}
+
+/* OmniSight — Compact, highlighted mobile search bar */
+@media (max-width: 700px) {
+  .top-actions .searchbox {
+    flex: 0 1 175px;
+    width: 175px;
+    max-width: 175px;
+    height: 42px;
+    padding: 0 12px;
+    gap: 7px;
+
+    background: linear-gradient(135deg, #ffffff, #f2efff);
+    border: 1.5px solid #a99bff;
+    border-radius: 13px;
+    box-shadow:
+      0 2px 8px rgba(124, 108, 242, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .top-actions .searchbox:focus-within {
+    background: #ffffff;
+    border-color: #6d5bea;
+    box-shadow: 0 0 0 3px rgba(124, 108, 242, 0.17);
+  }
+
+  .top-actions .searchbox > span {
+    color: #6d5bea;
+    font-size: 17px;
+  }
+
+  .top-actions .searchbox input {
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  /* Hide the Ctrl K keyboard-shortcut hint */
+  .top-actions .searchbox kbd,
+  .top-actions .searchbox .shortcut,
+  .top-actions .searchbox .search-shortcut {
+    display: none;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 380px) {
+  .top-actions .searchbox {
+    flex-basis: 155px;
+    width: 155px;
+    max-width: 155px;
+  }
+}
+
+/* OmniSight — Compact, highlighted mobile search bar */
+@media (max-width: 700px) {
+  .top-actions .searchbox {
+    flex: 0 1 175px;
+    width: 175px;
+    max-width: 175px;
+    height: 42px;
+    padding: 0 12px;
+    gap: 7px;
+
+    background: linear-gradient(135deg, #ffffff, #f2efff);
+    border: 1.5px solid #a99bff;
+    border-radius: 13px;
+    box-shadow:
+      0 2px 8px rgba(124, 108, 242, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .top-actions .searchbox:focus-within {
+    background: #ffffff;
+    border-color: #6d5bea;
+    box-shadow: 0 0 0 3px rgba(124, 108, 242, 0.17);
+  }
+
+  .top-actions .searchbox > span {
+    color: #6d5bea;
+    font-size: 17px;
+  }
+
+  .top-actions .searchbox input {
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  /* Hide the Ctrl K keyboard-shortcut hint */
+  .top-actions .searchbox kbd,
+  .top-actions .searchbox .shortcut,
+  .top-actions .searchbox .search-shortcut {
+    display: none;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 380px) {
+  .top-actions .searchbox {
+    flex-basis: 155px;
+    width: 155px;
+    max-width: 155px;
+  }
+}
+/* ==========================================================================
+   OmniSight — Light theme eye-strain refinement
+   Append at the very end of style.css.
+   Light mode only: every rule is scoped so dark mode is unchanged.
+   Gradients (primary, text, hero), layout and status hues are not touched.
+   ========================================================================== */
+
+/* ----- 1. Light-theme tokens (muted lavender-grey) ----- */
+:root:not(.dark):not([data-theme="dark"]) {
+  /* Surfaces */
+  --bg: #E9E8F1;
+  --surface: #F4F3F8;
+  --surface-hover: #F8F7FB;
+  --surface-soft: #E6E4F0;
+  --input-bg: #F9F8FC;
+
+  /* Borders */
+  --border: #D8D6E6;
+  --border-strong: #C6C3DB;
+
+  /* Text (all >= 4.5:1 on #E9E8F1 and #F4F3F8) */
+  --text-main: #231F3D;
+  --text-secondary: #55587A;
+  --text-muted: #636789;
+
+  /* Restrained purple accents */
+  --primary: #7366E4;
+  --primary-deep: #4C3FB0;
+  --primary-text: #5043B8;
+  --primary-soft: #E0DDF3;
+  --accent-peach: #F3E4D9;
+  --accent-mint: #DCEDE5;
+  --gradient-soft: linear-gradient(135deg, #E3E0F3, #F4F3F8);
+
+  /* Chrome */
+  --sidebar-bg: linear-gradient(160deg, #F0EFF6, #E8E7F0);
+  --topbar-bg: rgba(233, 232, 241, 0.88);
+  --aside-bg: linear-gradient(135deg, #F1F0F7, #E9ECF5);
+  --track-bg: #C9C6DD;
+  --highlight: rgba(255, 255, 255, 0.55);
+
+  /* Softer shadows */
+  --shadow-xs: 0 1px 2px rgba(52, 44, 110, 0.04);
+  --shadow-sm: 0 2px 6px rgba(52, 44, 110, 0.06);
+  --shadow-md: 0 6px 16px rgba(52, 44, 110, 0.07);
+  --shadow-lg: 0 12px 28px rgba(52, 44, 110, 0.10);
+  --shadow-xl: 0 18px 40px rgba(52, 44, 110, 0.14);
+  --depth-shadow-hover: 0 16px 36px rgba(52, 44, 110, 0.14), 0 6px 14px rgba(52, 44, 110, 0.07);
+  --sidebar-shadow: rgba(52, 44, 110, 0.05);
+
+  /* Status: same hues, inconclusive darkened so it reads on the muted track */
+  --st-inconclusive: #B3B9C7;
+
+  /* Metric cards: same four tones, less glare */
+  --m-indigo-bg: linear-gradient(150deg, #E3E8F7, #DCDAF3);
+  --m-indigo-bd: #C3CCE8;
+  --m-coral-bg: linear-gradient(150deg, #F6E5E1, #F1D9D3);
+  --m-coral-bd: #E3C6BE;
+  --m-mint-bg: linear-gradient(150deg, #DDEFE8, #D2E8DF);
+  --m-mint-bd: #B7D5C8;
+  --m-amber-bg: linear-gradient(150deg, #F5EBDD, #F0E1CC);
+  --m-amber-bd: #E0CDAE;
+
+  /* Illustrations and thumbnails */
+  --illus-bg: radial-gradient(ellipse at center, #DEDFEE, #ECEBF4 70%);
+  --screen-bg: #F4F3F8;
+  --screen-line: #D4D2E4;
+  --check-bg: #D3EBE0;
+  --thumb-bg: linear-gradient(135deg, #F0EFF6, #E8E7F1);
+  --thumb-bar: #DDDBEC;
+}
+
+/* ----- 2. Hardcoded light-only colours (scoped away from dark) ----- */
+
+/* White hero button -> off-white card colour */
+:root:not(.dark):not([data-theme="dark"]) body:not(.dark):not(.dark-mode):not([data-theme="dark"]) #page-overview .page-heading .button-dark,
+:root:not(.dark):not([data-theme="dark"]) body:not(.dark):not(.dark-mode):not([data-theme="dark"]) #page-overview .page-heading .button-dark:hover {
+  background: var(--surface);
+  border-color: var(--surface);
+}
+
+/* Compact mobile search bar: muted instead of white + bright lavender */
+@media (max-width: 700px) {
+  :root:not(.dark):not([data-theme="dark"]) body:not(.dark):not(.dark-mode):not([data-theme="dark"]) .top-actions .searchbox {
+    background: linear-gradient(135deg, #F4F3F8, #E6E3F4);
+    border-color: #8379CC;
+    box-shadow: 0 2px 8px rgba(80, 67, 184, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  :root:not(.dark):not([data-theme="dark"]) body:not(.dark):not(.dark-mode):not([data-theme="dark"]) .top-actions .searchbox:focus-within {
+    background: var(--surface-hover);
+    border-color: #5F50C4;
+    box-shadow: 0 0 0 3px rgba(115, 102, 228, 0.20);
+  }
+
+  :root:not(.dark):not([data-theme="dark"]) body:not(.dark):not(.dark-mode):not([data-theme="dark"]) .top-actions .searchbox > span {
+    color: var(--primary-text);
+  }
+}
