@@ -31,7 +31,7 @@ QA Documentation Update
 
 * Test matrix documented in test_matrix.md.
 * Test results checklist documented in test_results.md.
-* Manual horizontal scrolling check completed for OS-105. other test cases and backend verification remain pending.
+* Manual horizontal scrolling check completed for OS-105. other test cases and backend verification remain pending.g
 * Screenshots will be recorded after testing.
 QA Documentation Update
 
@@ -43,3 +43,21 @@ QA Documentation Update
 - Status: Pass — no horizontal scrolling observed
 - Evidence: Mobile viewport screenshot
 - Note: Backend verification remains inconclusive.
+Follow-up Verification Checklist
+
+* [ ]	Reproduce the original issue before applying a fix.
+* [ ]	Record the browser and viewport dimensions.
+* [ ]	Inspect the proposed CSS change.
+* [ ]	Repeat the test after the fix.
+* [ ]	Attach screenshot evidence.
+* [ ]	Record the final result as Pass, Fail, or Inconclusive.QA Evidence Recording
+
+For each executed test, record:
+
+* Test case ID
+* Browser and viewport size
+* Expected result
+* Actual result
+* Pass, Fail, or Inconclusive status
+* Screenshot or evidence reference
+* Tester observations
