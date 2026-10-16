@@ -38,6 +38,16 @@ def validate_target_url(url: str):
             detail="Target URL is not permitted by security policies (SSRF protection)."
         )
 
+@app.get("/", status_code=status.HTTP_200_OK)
+def read_root():
+    """Root endpoint providing service status and documentation links."""
+    return {
+        "service": "OmniSight Backend & Browser Automation",
+        "status": "active",
+        "docs": "/docs",
+        "role": "Member 2 - Backend & Browser Automation"
+    }
+
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check():
     return {"status": "healthy", "service": "OmniSight Backend & Browser Automation"}
