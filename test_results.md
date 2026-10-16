@@ -31,5 +31,15 @@ QA Documentation Update
 
 * Test matrix documented in test_matrix.md.
 * Test results checklist documented in test_results.md.
-* Actual test execution and verification are pending.
+* Manual horizontal scrolling check completed for OS-105. other test cases and backend verification remain pending.
 * Screenshots will be recorded after testing.
+QA Documentation Update
+
+### OS-105: Horizontal Scrolling at Mobile Viewport
+
+- Viewport: 393 × 852 px
+- Expected: No horizontal scrolling
+- Actual: Page stayed fixed when dragged sideways
+- Status: Pass — no horizontal scrolling observed
+- Evidence: Mobile viewport screenshot
+- Note: Backend verification remains inconclusive.
