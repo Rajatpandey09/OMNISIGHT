@@ -92,3 +92,10 @@ TC06 — Desktop: Fix verification
 * Expected defect: A previously detected UI defect remains after applying a fix.
 * Expected signal: The verification scan reports whether the defect is resolved.
 * Pass criteria: The original defect is no longer detected, and no new UI defects are introduced.
+Proposed Fix Verification
+
+* Confirm the original UI defect is reproducible before applying a fix.
+* Review the proposed CSS change and identify the affected element.
+* Verify the layout again at the same viewport size after the fix.
+* Record the actual result and supporting evidence.
+* Mark the issue as verified only after successful follow-up testing.
