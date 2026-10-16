@@ -1,4 +1,4 @@
-/* OmniSight Member 1 frontend. Demo fixtures are isolated and visibly labelled. */
+﻿/* OmniSight Member 1 frontend. Demo fixtures are isolated and visibly labelled. */
 (()=>{
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -27,6 +27,49 @@ const demoIssues=[
 let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0;
 
 const DEMO_STORAGE_KEY = "omnisight.demo.scans.v1";
+const DEMO_ISSUES_STORAGE_KEY = "omnisight.demo.issues.v1";
+
+function readSavedDemoIssues() {
+  try {
+    const raw = localStorage.getItem(DEMO_ISSUES_STORAGE_KEY);
+    const saved = raw ? JSON.parse(raw) : {};
+
+    return saved && typeof saved === "object" && !Array.isArray(saved)
+      ? saved
+      : {};
+  } catch (error) {
+    console.warn("Demo issue decisions could not be loaded:", error);
+    return {};
+  }
+}
+
+function saveDemoIssues(issues) {
+  try {
+    const saved = {};
+
+    issues.forEach(issue => {
+      const id = String(issue.id || issue.issue_id || "");
+      const fixture = demoIssues.find(item => item.id === id);
+
+      if (fixture && id) {
+        saved[id] = {
+          state: issue.state,
+          verification_outcome: issue.verification_outcome
+        };
+      }
+    });
+
+    localStorage.setItem(
+      DEMO_ISSUES_STORAGE_KEY,
+      JSON.stringify(saved)
+    );
+
+    return true;
+  } catch (error) {
+    console.warn("Demo issue decisions could not be saved:", error);
+    return false;
+  }
+}
 
 function readSavedDemoScans() {
   try {
@@ -163,7 +206,10 @@ if (isDemo()) {
 
   data = {
     scans: uniqueScans.slice(0, 20),
-    issues: demoIssues.map(issue => ({ ...issue })),
+    issues: demoIssues.map(issue => ({
+  ...issue,
+  ...(readSavedDemoIssues()[issue.id] || {})
+})),
     targets: [
       { id: "demo-overflow", name: "Demo target — mobile overflow" },
       { id: "demo-hidden", name: "Demo target — hidden control" }
@@ -274,6 +320,7 @@ async function reviewAction(action){
    if(action==="approve"){i.state="applied";i.verification_outcome="Approved in demo only — no code changed."}
    else if(action==="reject"){i.state="detected";i.verification_outcome="Proposal rejected in demo only."}
    else {i.state="inconclusive";i.verification_outcome="No verification executed in demo mode."}
+   saveDemoIssues(data.issues);
    renderAll();openReview(id);toast(action==="verify"?"Demo verification was not run.":"Demo state updated locally only.");return;
   }
   if(action==="approve")await window.OmniSightAPI.approveFix(id);
