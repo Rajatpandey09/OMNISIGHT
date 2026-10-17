@@ -45,8 +45,7 @@ class Finding(ModelFinding):
     viewport: Viewport
 
 
-Outcome = Literal["ok", "no_credentials", "provider_error", "invalid_output"]
-
+ Outcome = Literal["ok", "no_credentials", "provider_error", "invalid_output", "input_error"]
 
 class AnalysisResult(BaseModel):
     scan_id: str
