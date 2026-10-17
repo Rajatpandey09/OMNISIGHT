@@ -10,6 +10,24 @@ app = FastAPI(
     description="Backend service with robust error handling and artifact references."
 )
 
+import time
+import logging
+from fastapi import Request
+
+# Configure logging for tracking automation performance
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("omnisight_backend")
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    """Middleware to log request execution time and path details."""
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    logger.info(f"Path: {request.url.path} | Method: {request.method} | Duration: {process_time:.4f}s | Status: {response.status_code}")
+    return response
+
 ARTIFACT_DIR = "artifacts"
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
