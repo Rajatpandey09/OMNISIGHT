@@ -3713,3 +3713,444 @@ pre,
     color: var(--primary-text);
   }
 }
+/* OmniSight: neutral black dark theme */
+body.dark {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1c1c1c;
+  --border: #303030;
+  --text: #f5f5f5;
+  --muted: #a3a3a3;
+  --accent: #60a5fa;
+  --accent-hover: #3b82f6;
+
+  background: #0a0a0a;
+  color: #f5f5f5;
+}
+
+body.dark .sidebar,
+body.dark .main,
+body.dark .topbar {
+  background-color: #0a0a0a;
+}
+
+body.dark .surface,
+body.dark .metric-card,
+body.dark .profile,
+body.dark .sidebar-card {
+  background-color: #141414;
+  border-color: #303030;
+  color: #f5f5f5;
+}
+
+body.dark .data-banner {
+  background: #161616;
+  border-color: #303030;
+}
+
+body.dark .metric-card:nth-child(1),
+body.dark .metric-card:nth-child(2),
+body.dark .metric-card:nth-child(3),
+body.dark .metric-card:nth-child(4) {
+  background: #141414;
+  border-color: #303030;
+}
+
+body.dark .page-heading h1,
+body.dark h2,
+body.dark h3,
+body.dark .metric-card strong {
+  color: #f5f5f5;
+}
+
+body.dark .nav-link.active {
+  background: #1c1c1c;
+  color: #93c5fd;
+  border-color: #353535;
+}
+
+body.dark button:focus-visible,
+body.dark input:focus-visible,
+body.dark select:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+body.dark table th {
+  background: #1c1c1c;
+}
+
+body.dark table td,
+body.dark table th,
+body.dark .topbar {
+  border-color: #303030;
+}
+
+/* OmniSight: finish the black sidebar theme */
+body.dark .sidebar {
+  background: #0a0a0a !important;
+  border-right: 1px solid #292929;
+}
+
+body.dark .sidebar .nav-link {
+  background: transparent;
+  border-color: transparent;
+  color: #a3a3a3;
+}
+
+body.dark .sidebar .nav-link:hover {
+  background: #191919;
+  color: #f5f5f5;
+}
+
+body.dark .sidebar .nav-link.active {
+  background: #1a1a1a;
+  border-color: #303030;
+  color: #93c5fd;
+}
+
+body.dark .sidebar .nav-link.active::before {
+  background: #60a5fa;
+}
+
+body.dark .sidebar-card,
+body.dark .sidebar .profile,
+body.dark .sidebar .profile > span,
+body.dark .sidebar .privacy-rule {
+  background-color: #141414;
+  border-color: #292929;
+}
+
+body.dark .sidebar-card {
+  box-shadow: none;
+}
+
+body.dark .sidebar .profile {
+  border-top: 1px solid #292929;
+}
+
+body.dark .sidebar .theme-mini {
+  background: #1c1c1c;
+  border-color: #353535;
+  color: #f5f5f5;
+}
+
+body.dark .sidebar .nav-link .nav-count,
+body.dark .sidebar .nav-link .badge {
+  background: #262626;
+  color: #d4d4d4;
+  border-color: #383838;
+}
+
+/* OmniSight: neutral dark hero banner */
+body.dark .page-heading,
+body.dark .page-heading > div {
+  color: #f5f5f5;
+}
+
+body.dark #page-overview .page-heading {
+  background: linear-gradient(135deg, #171717 0%, #202020 65%, #172536 100%);
+  border: 1px solid #303030;
+  box-shadow: none;
+}
+
+body.dark #page-overview .page-heading h1,
+body.dark #page-overview .page-heading p,
+body.dark #page-overview .page-heading .eyebrow {
+  color: #f5f5f5;
+}
+
+body.dark #page-overview .page-heading h1 em {
+  color: #93c5fd;
+}
+
+body.dark #page-overview .page-heading .button {
+  background: #f5f5f5;
+  color: #111111;
+  border-color: #f5f5f5;
+}
+
+body.dark #page-overview .page-heading .button:hover {
+  background: #dbeafe;
+  color: #111111;
+}
+
+/* =========================================================
+   OmniSight — Graphite + Silver Dark Theme
+   Neutral charcoal surfaces, silver typography, no purple
+   Layout and functionality remain unchanged.
+   ========================================================= */
+
+body.dark,
+body.dark-mode,
+body[data-theme="dark"],
+:root.dark,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Core surfaces */
+  --bg: #101010;
+  --surface: #181818;
+  --surface-hover: #222222;
+  --surface-soft: #202020;
+
+  /* Borders and typography */
+  --border: #303030;
+  --border-strong: #444444;
+  --text-main: #F2F2F2;
+  --text-secondary: #B5B5B5;
+  --text-muted: #929292;
+  --highlight: rgba(255, 255, 255, 0.035);
+
+  /* Silver primary instead of purple */
+  --primary: #B8B8B8;
+  --primary-deep: #8F8F8F;
+  --primary-text: #E0E0E0;
+  --primary-soft: #262626;
+
+  /* Keep functional status colors */
+  --accent-blue: #A7C7E7;
+  --accent-green: #65CDAA;
+  --accent-coral: #F28B82;
+  --accent-peach: #332B25;
+  --accent-mint: #20342D;
+
+  /* Neutral gradients */
+  --gradient-primary: linear-gradient(135deg, #D0D0D0, #777777);
+  --gradient-text: linear-gradient(135deg, #F0F0F0, #AFAFAF);
+  --gradient-hero: linear-gradient(135deg, #202020, #303030);
+  --gradient-soft: linear-gradient(135deg, #202020, #171717);
+
+  /* Sidebar and controls */
+  --sidebar-bg: linear-gradient(180deg, #151515, #101010);
+  --topbar-bg: rgba(16, 16, 16, 0.94);
+  --aside-bg: linear-gradient(135deg, #202020, #181818);
+  --input-bg: #181818;
+  --track-bg: #444444;
+  --shimmer: rgba(255, 255, 255, 0.035);
+  --glow: rgba(255, 255, 255, 0.025);
+
+  /* Neutral shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.34);
+  --shadow-xl: 0 18px 40px rgba(0, 0, 0, 0.42);
+  --depth-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.35);
+  --sidebar-shadow: rgba(0, 0, 0, 0.30);
+
+  /* Metric cards: graphite, not purple */
+  --m-indigo-bg: linear-gradient(145deg, #202020, #181818);
+  --m-indigo-bd: #383838;
+  --m-coral-bg: linear-gradient(145deg, #242020, #191919);
+  --m-coral-bd: #403535;
+  --m-mint-bg: linear-gradient(145deg, #1C2521, #171C19);
+  --m-mint-bd: #304138;
+  --m-amber-bg: linear-gradient(145deg, #25221C, #191817);
+  --m-amber-bd: #40392D;
+
+  /* Supporting components */
+  --illus-bg: radial-gradient(ellipse at center, #292929, #171717 70%);
+  --screen-border: #555555;
+  --screen-bg: #1B1B1B;
+  --screen-line: #383838;
+  --check-bg: #20342D;
+  --check-text: #8BE0BC;
+  --thumb-bg: linear-gradient(135deg, #242424, #191919);
+  --thumb-bar: #383838;
+  --code-bg: linear-gradient(135deg, #202020, #141414);
+
+  /* Issue states */
+  --st-detected: #8B9BB8;
+  --st-detected-text: #D2D8E2;
+  --st-proposed: #91B6E8;
+  --st-proposed-text: #C6DDF9;
+  --st-applied: #B9B9B9;
+  --st-applied-text: #E0E0E0;
+  --st-verified: #65CDAA;
+  --st-verified-text: #A1E8CF;
+  --st-failed: #F28B82;
+  --st-failed-text: #FFB8B1;
+  --st-inconclusive: #89909A;
+  --st-inconclusive-text: #D0D3D8;
+
+  /* Warnings */
+  --warn-bg: rgba(245, 158, 11, 0.09);
+  --warn-bd: rgba(245, 158, 11, 0.35);
+  --warn-accent: #F0BB68;
+  --warn-text: #F0CB91;
+}
+
+/* Main application surfaces */
+body.dark .sidebar,
+body.dark-mode .sidebar,
+body[data-theme="dark"] .sidebar {
+  background: var(--sidebar-bg);
+  border-color: var(--border);
+}
+
+body.dark .main,
+body.dark-mode .main,
+body[data-theme="dark"] .main {
+  background: var(--bg);
+}
+
+body.dark .topbar,
+body.dark-mode .topbar,
+body[data-theme="dark"] .topbar {
+  background: var(--topbar-bg);
+  border-color: var(--border);
+}
+
+/* Hero: remove the purple-to-blue gradient */
+body.dark #page-overview .page-heading,
+body.dark-mode #page-overview .page-heading,
+body[data-theme="dark"] #page-overview .page-heading {
+  background: var(--gradient-hero);
+  border: 1px solid #383838;
+  box-shadow: none;
+}
+
+body.dark #page-overview .page-heading h1,
+body.dark #page-overview .page-heading p,
+body.dark #page-overview .page-heading .eyebrow,
+body.dark-mode #page-overview .page-heading h1,
+body.dark-mode #page-overview .page-heading p,
+body.dark-mode #page-overview .page-heading .eyebrow,
+body[data-theme="dark"] #page-overview .page-heading h1,
+body[data-theme="dark"] #page-overview .page-heading p,
+body[data-theme="dark"] #page-overview .page-heading .eyebrow {
+  color: #F2F2F2;
+}
+
+body.dark #page-overview .page-heading h1 em,
+body.dark-mode #page-overview .page-heading h1 em,
+body[data-theme="dark"] #page-overview .page-heading h1 em {
+  color: #C7C7C7;
+  -webkit-text-fill-color: #C7C7C7;
+  background: none;
+}
+
+/* Sidebar active and hover states */
+body.dark .nav-link:hover,
+body.dark .nav-link.active,
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active,
+body[data-theme="dark"] .nav-link:hover,
+body[data-theme="dark"] .nav-link.active {
+  background: #242424;
+  border-color: #383838;
+  color: #F0F0F0;
+  box-shadow: none;
+}
+
+body.dark .nav-link::before,
+body.dark-mode .nav-link::before,
+body[data-theme="dark"] .nav-link::before {
+  background: #C4C4C4;
+}
+
+/* Workspace/privacy card and profile */
+body.dark .privacy-card,
+body.dark .profile,
+body.dark-mode .privacy-card,
+body.dark-mode .profile,
+body[data-theme="dark"] .privacy-card,
+body[data-theme="dark"] .profile {
+  background: #171717;
+  border-color: #303030;
+  box-shadow: none;
+}
+
+body.dark .privacy-card:hover,
+body.dark-mode .privacy-card:hover,
+body[data-theme="dark"] .privacy-card:hover {
+  border-color: #555555;
+}
+
+body.dark .privacy-icon,
+body.dark-mode .privacy-icon,
+body[data-theme="dark"] .privacy-icon {
+  background: #383838;
+  color: #F2F2F2;
+  box-shadow: none;
+}
+
+body.dark .privacy-rule,
+body.dark-mode .privacy-rule,
+body[data-theme="dark"] .privacy-rule {
+  background: #303030;
+}
+
+body.dark .privacy-rule::after,
+body.dark-mode .privacy-rule::after,
+body[data-theme="dark"] .privacy-rule::after {
+  background: #BDBDBD;
+}
+
+/* Replace purple brand text with silver */
+body.dark .brand b,
+body.dark-mode .brand b,
+body[data-theme="dark"] .brand b {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Controls and focus indicators */
+body.dark .mode-switch:hover,
+body.dark .theme-mini:hover,
+body.dark-mode .mode-switch:hover,
+body.dark-mode .theme-mini:hover,
+body[data-theme="dark"] .mode-switch:hover,
+body[data-theme="dark"] .theme-mini:hover {
+  background: #292929;
+  color: #F2F2F2;
+}
+
+body.dark :focus-visible,
+body.dark-mode :focus-visible,
+body[data-theme="dark"] :focus-visible {
+  outline-color: #D0D0D0;
+}
+
+/* Neutral demo banner and table headers */
+body.dark .data-banner,
+body.dark-mode .data-banner,
+body[data-theme="dark"] .data-banner {
+  background: #171717;
+  border-color: #333333;
+}
+
+body.dark table th,
+body.dark-mode table th,
+body[data-theme="dark"] table th {
+  background: #202020;
+  color: #DADADA;
+}
+
+/* Search input on mobile: override earlier hardcoded light colors */
+@media (max-width: 700px) {
+  body.dark .top-actions .searchbox,
+  body.dark-mode .top-actions .searchbox,
+  body[data-theme="dark"] .top-actions .searchbox {
+    background: #181818;
+    border-color: #383838;
+    box-shadow: none;
+  }
+
+  body.dark .top-actions .searchbox:focus-within,
+  body.dark-mode .top-actions .searchbox:focus-within,
+  body[data-theme="dark"] .top-actions .searchbox:focus-within {
+    background: #202020;
+    border-color: #AFAFAF;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+  }
+
+  body.dark .top-actions .searchbox > span,
+  body.dark-mode .top-actions .searchbox > span,
+  body[data-theme="dark"] .top-actions .searchbox > span {
+    color: #D0D0D0;
+  }
+}
