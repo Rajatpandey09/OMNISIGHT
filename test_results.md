@@ -61,3 +61,12 @@ For each executed test, record:
 * Pass, Fail, or Inconclusive status
 * Screenshot or evidence reference
 * Tester observations
+Horizontal Overflow — Mobile Test
+
+* Viewport: 393 × 852
+* Expected defect: Horizontal overflow
+* Test page: test-pages/bug_overflow.html
+* Evidence: eval/evidence/horizontal-overflow-mobile.png
+* Status: Observed — horizontal overflow visible in the test page.
+* Note: This is an intentional test defect, not a production bug.
+
