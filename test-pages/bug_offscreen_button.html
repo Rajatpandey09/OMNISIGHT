@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Test - Off-Screen Button</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 20px;
+    }
+
+    .test-box {
+      border: 2px solid #333;
+      padding: 20px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .offscreen-button {
+      position: relative;
+      left: 1200px;
+      padding: 12px 20px;
+      background-color: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Off-Screen Button Test</h1>
+
+  <p>
+    QA test case: Verify whether a button remains
+    inside the visible viewport.
+  </p>
+
+  <div class="test-box">
+    <p>Test area</p>
+
+    <button class="offscreen-button" id="testButton">
+      Test Button
+    </button>
+  </div>
+
+  <p id="result">Test not checked yet.</p>
+
+  <script>
+    const button = document.getElementById("testButton");
+    const result = document.getElementById("result");
+
+    function checkButton() {
+      const rect = button.getBoundingClientRect();
+
+      const visible =
+        rect.left >= 0 &&
+        rect.right <= window.innerWidth &&
+        rect.top >= 0 &&
+        rect.bottom <= window.innerHeight;
+
+      result.textContent = visible
+        ? "PASS: Button is inside the viewport."
+        : "FAIL: Button is outside the visible viewport.";
+    }
+
+    checkButton();
+    window.addEventListener("resize", checkButton);
+  </script>
+</body>
+</html>

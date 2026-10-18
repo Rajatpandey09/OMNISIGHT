@@ -69,4 +69,16 @@ Horizontal Overflow — Mobile Test
 * Evidence: eval/evidence/horizontal-overflow-mobile.png
 * Status: Observed — horizontal overflow visible in the test page.
 * Note: This is an intentional test defect, not a production bug.
+Off-Screen Button Test
 
+Test page: bug_offscreen_button.html
+
+Test objective: Verify whether the button stays inside the visible browser viewport.
+
+Test	Expected result	Actual result
+Broken page (left: 1200px)	FAIL — button outside viewport	FAIL
+Fixed page	PASS — button inside viewport	PASS
+
+Evidence: PASS and FAIL screenshots saved in eval/evidence/.
+
+Status: Test performed; evidence captured.
