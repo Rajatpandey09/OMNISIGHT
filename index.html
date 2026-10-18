@@ -43,14 +43,12 @@
       <div class="breadcrumbs"><span>Workspace</span><i>/</i><b id="breadcrumb">Overview</b></div>
       <div class="top-actions">
         <label class="searchbox"><span>⌕</span><input id="globalSearch" type="search" placeholder="Search issues and scans" aria-label="Search issues and scans"><kbd>Ctrl K</kbd></label>
-        <label class="mode-switch"><input type="checkbox" id="demoMode" checked><span class="switch-track"></span><span id="modeLabel">Demo mode</span></label>
         <button class="icon-button" id="refreshButton" aria-label="Refresh dashboard" title="Refresh data">↻</button>
       </div>
     </header>
 
     <section class="page active" id="page-overview">
       <div class="page-heading"><div><span class="eyebrow">QUALITY AT A GLANCE</span><h1>A clearer view of <em>what needs fixing.</em></h1><p>Track scan activity, inspect visual defects, and keep every fix accountable.</p></div><button class="button button-dark" data-page="scan">Start a scan <span>↗</span></button></div>
-      <div class="data-banner" id="dataBanner"><span class="banner-dot"></span><div><b>Demo mode is on</b><p>Illustrative sample records are shown. No real scans or network requests are made.</p></div><button id="dismissBanner" aria-label="Dismiss message">×</button></div>
       <div class="state-panel" id="dashboardState" aria-live="polite" hidden></div>
       <section class="metric-grid" id="metricGrid" aria-label="Dashboard metrics">
         <article class="metric-card"><div class="metric-top"><span class="metric-icon icon-indigo">▱</span><span class="metric-label">SCAN ACTIVITY</span></div><strong id="metricScans">—</strong><p>Total scans</p><div class="metric-foot">All recorded runs</div></article>
@@ -95,7 +93,7 @@
       <div id="reviewState" class="state-panel" hidden></div>
       <div class="review-grid" id="reviewContent"></div>
     </section>
-    <footer class="app-footer"><span>OmniSight <i>·</i> Visual QA, with a human in control.</span><span id="footerMode">DEMO ENVIRONMENT</span></footer>
+    <footer class="app-footer"><span>OmniSight <i>·</i> Visual QA, with a human in control.</span><span id="footerMode">LIVE API</span></footer>
   </main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

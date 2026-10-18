@@ -39,79 +39,13 @@ class ApiError extends Error {
  */
 class ApiClient {
   constructor(baseUrl = API_BASE_URL, timeout = DEFAULT_TIMEOUT_MS) {
-    this.baseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-    this.timeout = timeout;
-    this.demoMode = this._isDemoMode();
-    this._fixtureRegistry = new Map(); // In-memory fixture storage for demo mode
-    this._initDemoFixtures(); // Seed with default fixtures
-  }
-
-  _isDemoMode() {
-    // Check demo mode flag from DOM or environment
-    if (typeof window !== "undefined") {
-      const demoToggle = document.getElementById("demoMode");
-      if (demoToggle) return demoToggle.checked;
-      if (window.OmniSightConfig && typeof window.OmniSightConfig.demoMode === "boolean") {
-        return window.OmniSightConfig.demoMode;
-      }
-    }
-    // Fallback to environment variable or default to false for production
-    if (typeof process !== "undefined" && process.env && typeof process.env.OMNISIGHT_DEMO === "boolean") {
-      return process.env.OMNISIGHT_DEMO;
-    }
-    return false;
-  }
-
-  _initDemoFixtures() {
-    // Register demo fixtures for various endpoints
-    this._fixtureRegistry.set("/dashboard", {
-      total_scans: 14,
-      issues_found: 8,
-      verified_resolved: 3,
-      needs_attention: 5,
-      last_updated: "2026-10-14T09:30:00Z"
-    });
-
-    this._fixtureRegistry.set("/scans", [
-      { id: "DEMO-014", target: "shop.demo.local", started_at: "2026-10-14T10:42:00Z", viewports: ["Desktop", "Mobile"], status: "completed", issue_count: 4 },
-      { id: "DEMO-013", target: "docs.demo.local", started_at: "2026-10-13T16:18:00Z", viewports: ["Desktop"], status: "completed", issue_count: 2 },
-      { id: "DEMO-012", target: "landing.demo.local", started_at: "2026-10-12T14:00:00Z", viewports: ["Mobile"], status: "partial", issue_count: 3 }
-    ]);
-
-    this._fixtureRegistry.set("/issues", [
-      { id: "OS-101", title: "Primary action overlaps sticky footer", type: "Layout", viewport: "Mobile", severity: "High", state: "proposed", scan_id: "DEMO-014", verified: false },
-      { id: "OS-102", title: "Hero media exceeds content width", type: "Layout", viewport: "Mobile", severity: "Medium", state: "detected", scan_id: "DEMO-014", verified: false },
-      { id: "OS-103", title: "Secondary action has weak contrast", type: "Accessibility", viewport: "Desktop", severity: "High", state: "proposed", scan_id: "DEMO-013", verified: false },
-      { id: "OS-104", title: "Product cards use inconsistent corner radius", type: "Visual", viewport: "Desktop", severity: "Low", state: "applied", scan_id: "DEMO-013", verified: true },
-      { id: "OS-105", title: "Horizontal page scrolling at 390px", type: "Layout", viewport: "Mobile", severity: "High", state: "inconclusive", scan_id: "DEMO-012", verified: false },
-      { id: "OS-106", title: "Form submit control is not visible", type: "Visibility", viewport: "Desktop", severity: "Medium", state: "failed", scan_id: "DEMO-012", verified: false }
-    ]);
-
-    this._fixtureRegistry.set("/targets", [
-      { id: "demo-overflow", name: "Demo target — mobile overflow" },
-      { id: "demo-hidden", name: "Demo target — hidden control" },
-      { id: "demo-standard", name: "Demo target — standard layout" }
-    ]);
-
-    // Register action-specific fixtures
-    this._fixtureRegistry.set("/approve_fix", { success: true, issue_id: "OS-101", verification: "applied" });
-    this._fixtureRegistry.set("/reject_fix", { success: true, issue_id: "OS-102", verification: "detected" });
-    this._fixtureRegistry.set("/verify_fix", { success: true, issue_id: "OS-103", verification: "verified" });
-  }
-
+  this.baseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  this.timeout = timeout;
+}
   async request(path, options = {}) {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    // Handle demo mode
-    if (this.demoMode) {
-      clearTimeout(timeoutId);
-      await new Promise(resolve => setTimeout(resolve, DEMO_LATENCY_MS));
-      const fixture = this._fixtureRegistry.get(path) || this._fixtureRegistry.get("/default") || {};
-      return this._normalizeDemoResponse(path, fixture);
-    }
-
     // Handle live mode
     try {
       const headers = {
@@ -260,12 +194,6 @@ class ApiClient {
       body: { issue_id: id }
     });
  }
-
-  // Utility method to switch demo mode
-  setDemoMode(enabled) {
-    this.demoMode = enabled;
-  }
-
   // Method to override base URL (useful for testing)
   setBaseUrl(url) {
     this.baseUrl = url.endsWith("/") ? url.slice(0, -1) : url;

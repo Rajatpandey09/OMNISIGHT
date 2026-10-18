@@ -11,104 +11,7 @@ const stateMeta={
  failed:{label:"Failed",className:"failed"},
  inconclusive:{label:"Inconclusive",className:"inconclusive"}
 };
-const demoScans=[
-{id:"DEMO-014",target:"shop.demo.local",created_at:"Today, 10:42",viewports:["Desktop","Mobile"],status:"completed",issue_count:4},
-{id:"DEMO-013",target:"docs.demo.local",created_at:"Yesterday, 16:18",viewports:["Desktop"],status:"completed",issue_count:2},
-{id:"DEMO-012",target:"landing.demo.local",created_at:"12 Oct 2026",viewports:["Mobile"],status:"partial",issue_count:3}
-];
-const demoIssues=[
-{id:"OS-101",title:"Primary action overlaps sticky footer",type:"Layout",viewport:"Mobile",severity:"High",description:"The main call-to-action is partly obscured by a fixed footer at 390px viewport width.",state:"proposed",scan_id:"DEMO-014",before_screenshot:"",after_screenshot:"",suggested_css:".checkout-button { position: relative; z-index: 2; margin-bottom: 1rem; }",verification_outcome:"Awaiting approval",evidence:"The demo finding indicates an overlap between the primary action and the sticky footer. Confirm element bounds in the captured evidence before applying a change."},
-{id:"OS-102",title:"Hero media exceeds content width",type:"Layout",viewport:"Mobile",severity:"Medium",description:"Hero media extends past the content column and may cause horizontal page overflow.",state:"detected",scan_id:"DEMO-014",before_screenshot:"",after_screenshot:"",suggested_css:"img.hero-media { max-width: 100%; height: auto; object-fit: cover; }",verification_outcome:"Not run",evidence:"The illustrative mobile capture indicates the image extends beyond its parent container."},
-{id:"OS-103",title:"Secondary action has weak contrast",type:"Accessibility",viewport:"Desktop",severity:"High",description:"The secondary action may not meet the intended text/background contrast.",state:"proposed",scan_id:"DEMO-013",before_screenshot:"",after_screenshot:"",suggested_css:".button-secondary { color: #263246; background: #f4f6fa; }",verification_outcome:"Awaiting approval",evidence:"Check the actual computed colors and applicable contrast threshold before approving this proposal."},
-{id:"OS-104",title:"Product cards use inconsistent corner radius",type:"Visual",viewport:"Desktop",severity:"Low",description:"Card corners use different radius values across the same component group.",state:"applied",scan_id:"DEMO-013",before_screenshot:"",after_screenshot:"",suggested_css:".product-card { border-radius: 12px; }",verification_outcome:"Verification not yet confirmed",evidence:"The demo finding shows inconsistent card radii. The applied change remains unverified until a follow-up scan succeeds."},
-{id:"OS-105",title:"Horizontal page scrolling at 390px",type:"Layout",viewport:"Mobile",severity:"High",description:"A child element appears wider than the viewport, creating sideways scrolling.",state:"inconclusive",scan_id:"DEMO-012",before_screenshot:"",after_screenshot:"",suggested_css:"/* Inspect the overflowing child width; avoid hiding overflow globally. */",verification_outcome:"Inconclusive — more evidence required",evidence:"The sample result does not identify the responsible element with sufficient confidence."},
-{id:"OS-106",title:"Form submit control is not visible",type:"Visibility",viewport:"Desktop",severity:"Medium",description:"The expected submit control is absent from the available capture.",state:"failed",scan_id:"DEMO-012",before_screenshot:"",after_screenshot:"",suggested_css:".form-submit { display: inline-flex; visibility: visible; }",verification_outcome:"Verification failed",evidence:"The illustrative follow-up did not confirm that the submit control became visible."}
-];
 let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0;
-
-const DEMO_STORAGE_KEY = "omnisight.demo.scans.v1";
-const DEMO_ISSUES_STORAGE_KEY = "omnisight.demo.issues.v1";
-
-function readSavedDemoIssues() {
-  try {
-    const raw = localStorage.getItem(DEMO_ISSUES_STORAGE_KEY);
-    const saved = raw ? JSON.parse(raw) : {};
-
-    return saved && typeof saved === "object" && !Array.isArray(saved)
-      ? saved
-      : {};
-  } catch (error) {
-    console.warn("Demo issue decisions could not be loaded:", error);
-    return {};
-  }
-}
-
-function saveDemoIssues(issues) {
-  try {
-    const saved = {};
-
-    issues.forEach(issue => {
-      const id = String(issue.id || issue.issue_id || "");
-      const fixture = demoIssues.find(item => item.id === id);
-
-      if (fixture && id) {
-        saved[id] = {
-          state: issue.state,
-          verification_outcome: issue.verification_outcome
-        };
-      }
-    });
-
-    localStorage.setItem(
-      DEMO_ISSUES_STORAGE_KEY,
-      JSON.stringify(saved)
-    );
-
-    return true;
-  } catch (error) {
-    console.warn("Demo issue decisions could not be saved:", error);
-    return false;
-  }
-}
-
-function readSavedDemoScans() {
-  try {
-    const raw = localStorage.getItem(DEMO_STORAGE_KEY);
-    const saved = raw ? JSON.parse(raw) : [];
-    return Array.isArray(saved) ? saved : [];
-  } catch (error) {
-    console.warn("Demo scan history could not be loaded:", error);
-    return [];
-  }
-}
-
-function saveDemoScans(scans) {
-  try {
-    const fixtureIds = new Set(demoScans.map(scan => scan.id));
-    const savedScans = scans.filter(scan => !fixtureIds.has(scan.id));
-
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      JSON.stringify(savedScans.slice(0, 20))
-    );
-
-    return true;
-  } catch (error) {
-    console.warn("Demo scan history could not be saved:", error);
-    return false;
-  }
-}
-
-function nextDemoScanId(scans) {
-  const highest = scans.reduce((max, scan) => {
-    const match = String(scan.id || "").match(/^DEMO-(\d+)$/);
-    return match ? Math.max(max, Number(match[1])) : max;
-  }, 0);
-
-  return `DEMO-${String(highest + 1).padStart(3, "0")}`;
-}
-
-const isDemo=()=>$("#demoMode").checked;
 // const stateOf = (i) => String(i.state || i.verification_state || i.status || "detected").toLowerCase().replace(/[\s-]+/g, "_").includes("verified") ? "verified" : normalizeState(i.state || i.verification_state || i.status);
 function normalizeState(raw){
  const s=String(raw||"detected").toLowerCase().replace(/[\s-]+/g,"_");
@@ -124,13 +27,22 @@ function severity(raw){const s=String(raw||"Unknown").toLowerCase();return `<spa
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3200)}
 function setState(el,kind,title,message){el.hidden=false;el.className=`state-panel state-${kind}`;el.innerHTML=`<span class="state-symbol">${kind==="loading"?"…":kind==="error"?"!":kind==="empty"?"—":"i"}</span><div><b>${esc(title)}</b><p>${esc(message)}</p></div>${kind==="error"?'<button class="text-link retry-button">Try again →</button>':""}`}
 function clearState(el){el.hidden=true;el.innerHTML=""}
-function setModeUI(){
- const demo=isDemo();$("#modeLabel").textContent=demo?"Demo mode":"Live API";$("#dataBanner").hidden=!demo;$("#footerMode").textContent=demo?"DEMO ENVIRONMENT":"LIVE API";$("#scanModeFoot").textContent=demo?"Demo mode — no network request is made.":`API: ${window.OmniSightAPI.baseUrl}`;
+function setModeUI() {
+  const footerMode = $("#footerMode");
+  const scanModeFoot = $("#scanModeFoot");
+
+  if (footerMode) {
+    footerMode.textContent = "LIVE API";
+  }
+
+  if (scanModeFoot) {
+    scanModeFoot.textContent =
+      `API: ${window.OmniSightAPI.baseUrl}`;
+  }
 }
 
 function renderMetrics() {
   const d = data.dashboard || {};
-  const demo = isDemo();
 
   const countVerified = data.issues.filter(
     i => normalizeState(i.state || i.verification_state || i.status) === "verified"
@@ -140,22 +52,10 @@ function renderMetrics() {
     i => normalizeState(i.state || i.verification_state || i.status) !== "verified"
   ).length;
 
-  $("#metricScans").textContent = demo
-    ? data.scans.length
-    : val(d.total_scans, data.scans.length);
-
-  $("#metricIssues").textContent = demo
-    ? data.issues.length
-    : val(d.issues_found, data.issues.length);
-
-  $("#metricVerified").textContent = demo
-    ? countVerified
-    : val(d.verified_resolved, countVerified);
-
-  $("#metricAttention").textContent = demo
-    ? countAttention
-    : val(d.needs_attention, countAttention);
-
+  $("#metricScans").textContent = val(d.total_scans, data.scans.length);
+  $("#metricIssues").textContent = val(d.issues_found, data.issues.length);
+  $("#metricVerified").textContent = val(d.verified_resolved, countVerified);
+  $("#metricAttention").textContent = val(d.needs_attention, countAttention);
   $("#navIssueCount").textContent = data.issues.length;
 }
 
@@ -177,81 +77,184 @@ function renderStatus(){
  $("#priorityEmpty").hidden=outstanding.length>0;
 }
 function severityRank(s){return ({critical:5,high:4,medium:3,low:2,info:1})[String(s||"").toLowerCase()]||0}
-function renderIssues(){
- const filter=$("#statusFilter").value,q=$("#globalSearch").value.trim().toLowerCase();
- const list=data.issues.filter(i=>{const st=normalizeState(i.state||i.verification_state||i.status);return(filter==="all"||st===filter)&&(!q||`${i.id} ${i.title} ${i.type} ${i.viewport} ${i.description}`.toLowerCase().includes(q))});
- $("#issueSummary").textContent=`${list.length} issue${list.length===1?"":"s"}  ·  ${isDemo()?"sample records":"backend response"}`;
- $("#issueList").innerHTML=list.map(i=>{
- const id=i.id||i.issue_id;const view=i.viewport||i.viewport_size||"Not specified";const type=i.type||i.issue_type||"Unclassified";
- return `<article class="issue-row"><div class="issue-thumb" aria-hidden="true"><div class="thumb-top"><i></i><i></i><i></i></div><div class="thumb-content"><span></span><span></span><i></i></div></div><div class="issue-main"><div class="issue-title-line"><h3>${esc(i.title||"Untitled issue")}</h3>${severity(i.severity)}</div><p>${esc(i.description||i.summary||"No description was supplied by the backend.")}</p><div class="issue-meta"><span>${esc(id||"ID unavailable")}</span><span>${esc(type)}</span><span>${esc(view)}</span></div><div class="issue-states">${badge(i.state||i.verification_state||i.status)}<span class="evidence-hint">${i.before_screenshot||i.screenshot_url||i.evidence_screenshot?"Evidence available":"Evidence unavailable"}</span></div></div><div class="issue-actions"><button class="button button-small button-light" data-review="${esc(id)}">Review issue →</button></div></article>`;
- }).join("");
- $("#issuesState").hidden=list.length>0; if(!list.length)setState($("#issuesState"),"empty","No matching issues","Try a different status filter or search term.");
+function renderIssues() {
+  const filter = $("#statusFilter").value;
+  const q = $("#globalSearch").value.trim().toLowerCase();
+
+  const list = data.issues.filter(i => {
+    const st = normalizeState(
+      i.state || i.verification_state || i.status
+    );
+
+    const text = `${i.id || i.issue_id || ""} ${i.title || ""} ${
+      i.type || i.issue_type || ""} ${i.viewport || i.viewport_size || ""} ${
+      i.description || i.summary || ""}`.toLowerCase();
+
+    return (filter === "all" || st === filter) &&
+      (!q || text.includes(q));
+  });
+
+  $("#issueSummary").textContent =
+    `${list.length} issue${list.length === 1 ? "" : "s"} · backend response`;
+
+  $("#issueList").innerHTML = list.map(i => {
+    const id = i.id || i.issue_id;
+    const view = i.viewport || i.viewport_size || "Not specified";
+    const type = i.type || i.issue_type || "Unclassified";
+
+    return `<article class="issue-row">
+      <div class="issue-thumb" aria-hidden="true">
+        <div class="thumb-top"><i></i><i></i><i></i></div>
+        <div class="thumb-content"><span></span><span></span><i></i></div>
+      </div>
+      <div class="issue-main">
+        <div class="issue-title-line">
+          <h3>${esc(i.title || "Untitled issue")}</h3>
+          ${severity(i.severity)}
+        </div>
+        <p>${esc(i.description || i.summary ||
+          "No description was supplied by the backend.")}</p>
+        <div class="issue-meta">
+          <span>${esc(id || "ID unavailable")}</span>
+          <span>${esc(type)}</span>
+          <span>${esc(view)}</span>
+        </div>
+        <div class="issue-states">
+          ${badge(i.state || i.verification_state || i.status)}
+          <span class="evidence-hint">${
+            i.before_screenshot || i.screenshot_url || i.evidence_screenshot
+              ? "Evidence available"
+              : "Evidence unavailable"
+          }</span>
+        </div>
+      </div>
+      <div class="issue-actions">
+        <button class="button button-small button-light"
+          data-review="${esc(id || "")}">Review issue →</button>
+      </div>
+    </article>`;
+  }).join("");
+
+  const state = $("#issuesState");
+  state.hidden = list.length > 0;
+
+  if (!list.length) {
+    setState(
+      state,
+      "empty",
+      "No matching issues",
+      "Try a different status filter or search term."
+    );
+  }
 }
 function renderAll(){renderMetrics();renderScans();renderStatus();renderIssues()}
-async function loadData(){
- const generation=++loadGeneration;setModeUI();
-if (isDemo()) {
-  const savedScans = readSavedDemoScans();
+async function loadData() {
+  const generation = ++loadGeneration;
 
-  const combinedScans = [
-    ...savedScans,
-    ...demoScans.map(scan => ({ ...scan }))
-  ];
+  setModeUI();
 
-  const uniqueScans = [
-    ...new Map(
-      combinedScans.map(scan => [String(scan.id), scan])
-    ).values()
-  ];
+  setState(
+    $("#dashboardState"),
+    "loading",
+    "Loading dashboard",
+    "Fetching current data from the backend."
+  );
 
-  data = {
-    scans: uniqueScans.slice(0, 20),
-    issues: demoIssues.map(issue => ({
-  ...issue,
-  ...(readSavedDemoIssues()[issue.id] || {})
-})),
-    targets: [
-      { id: "demo-overflow", name: "Demo target — mobile overflow" },
-      { id: "demo-hidden", name: "Demo target — hidden control" }
-    ],
-    dashboard: {
-      total_scans: uniqueScans.length,
-      issues_found: demoIssues.length,
-      verified_resolved: 0,
-      needs_attention: demoIssues.length
-    }
-  };
-  renderAll();
-  fillTargets();
+  $("#metricGrid").classList.add("is-loading");
+
+  try {
+    const results = await Promise.all([
+      window.OmniSightAPI.dashboard(),
+      window.OmniSightAPI.scans(),
+      window.OmniSightAPI.issues(),
+      window.OmniSightAPI.targets()
+    ]);
+
+    if (generation !== loadGeneration) return;
+
+    data = {
+      dashboard: results[0] || {},
+      scans: normalizeArray(results[1]),
+      issues: normalizeArray(results[2]),
+      targets: normalizeTargets(results[3])
+    };
+
+    renderAll();
+    fillTargets();
+
     clearState($("#dashboardState"));
-  return;
-}
- setState($("#dashboardState"),"loading","Loading dashboard","Requesting current scan and issue data from the backend.");
- $("#metricGrid").classList.add("is-loading");
- try{
-  const results=await Promise.all([window.OmniSightAPI.dashboard(),window.OmniSightAPI.scans(),window.OmniSightAPI.issues(),window.OmniSightAPI.targets()]);
-  if(generation!==loadGeneration)return;
-  data={dashboard:results[0]||{},scans:normalizeArray(results[1]),issues:normalizeArray(results[2]),targets:normalizeTargets(results[3])};
-  renderAll();fillTargets();clearState($("#dashboardState"));
-  if(!data.scans.length&&!data.issues.length)setState($("#dashboardState"),"empty","No data yet","The backend returned no scans or issues. Start a scan to begin.");
- }catch(error){
-  if(generation!==loadGeneration)return;
-  data={dashboard:null,scans:[],issues:[],targets:[]};renderAll();fillTargets();
-  setState($("#dashboardState"),"error","Could not load live data",error.message+" Confirm the backend routes in api.js match your teammate's API contract.");
-  setState($("#issuesState"),"error","Issues unavailable",error.message);setState($("#historyState"),"error","History unavailable",error.message);
- }finally{$("#metricGrid").classList.remove("is-loading")}
+    clearState($("#issuesState"));
+    clearState($("#historyState"));
+
+    if (!data.scans.length && !data.issues.length) {
+      setState(
+        $("#dashboardState"),
+        "empty",
+        "No data yet",
+        "No scans or issues have been returned by the backend."
+      );
+    }
+  } catch (error) {
+    if (generation !== loadGeneration) return;
+
+    data = {
+      dashboard: null,
+      scans: [],
+      issues: [],
+      targets: []
+    };
+
+    renderAll();
+    fillTargets();
+
+    setState(
+      $("#dashboardState"),
+      "error",
+      "Backend unavailable",
+      error.message
+    );
+
+    setState(
+      $("#issuesState"),
+      "empty",
+      "No issues available",
+      "Issues will appear when the backend returns them."
+    );
+
+    setState(
+      $("#historyState"),
+      "empty",
+      "No scan history available",
+      "Scan history will appear when the backend returns it."
+    );
+  } finally {
+    $("#metricGrid").classList.remove("is-loading");
+  }
 }
 function normalizeArray(v){return Array.isArray(v)?v:Array.isArray(v?.items)?v.items:Array.isArray(v?.results)?v.results:[]}
 function normalizeTargets(v){return normalizeArray(v).map(t=>({id:t.id??t.target_id??t.url,name:t.name??t.label??t.url??t.target_url??String(t.id)}))}
-function fillTargets(){
- const sel=$("#target"),old=sel.value;
- sel.innerHTML="";
- if(isDemo()){
-  data.targets.forEach(t=>sel.add(new Option(t.name,t.id)));$("#targetHelp").textContent="Sample targets only. No site is accessed in demo mode.";return;
- }
- if(!data.targets.length){sel.add(new Option("No configured targets available",""));$("#targetHelp").textContent="The backend returned no configured targets.";return}
- data.targets.forEach(t=>sel.add(new Option(t.name,t.id)));if(data.targets.some(t=>String(t.id)===old))sel.value=old;
- $("#targetHelp").textContent="Targets are provided by the backend.";
+function fillTargets() {
+  const select = $("#target");
+  const previousValue = select.value;
+
+  select.innerHTML = "";
+
+  if (!data.targets.length) {
+    select.add(new Option("No configured targets", ""));
+    $("#targetHelp").textContent =
+      "Configure a target through the backend before starting a scan.";
+    return;
+  }
+
+  data.targets.forEach(target => {
+    select.add(new Option(target.name, target.id));
+  });
+
+  if (data.targets.some(target => String(target.id) === previousValue)) {
+    select.value = previousValue;
+  }
+
+  $("#targetHelp").textContent = "Targets are provided by the backend.";
 }
 function navigate(page){
  const pages=["overview","scan","issues","history","review"];
@@ -279,55 +282,86 @@ else if (state === "applied") actions.innerHTML = '<button class="button button-
 
  else actions.innerHTML='<span class="action-note">Available actions depend on the current backend state.</span>';
 }
-async function handleScan(e){
- e.preventDefault();const desktop=$("#desktopViewport").checked,mobile=$("#mobileViewport").checked;
- if(!desktop&&!mobile){$("#scanFeedback").textContent="Select at least one viewport.";return}
- if(!$("#target").value){$("#scanFeedback").textContent="Choose a configured target first.";return}
- const btn=$("#runScanButton");btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Request pending…';$("#scanFeedback").textContent="";
- try{
-if (isDemo()) {
-  const scan = {
-    id: nextDemoScanId(data.scans),
-    target: $("#target").selectedOptions[0]?.textContent || "Demo target",
-    created_at: new Date().toLocaleString(),
-    viewports: [
-      desktop ? "Desktop" : null,
-      mobile ? "Mobile" : null
-    ].filter(Boolean),
-    status: "demo not executed",
-    issue_count: 0
-  };
+async function handleScan(e) {
+  e.preventDefault();
 
-  data.scans.unshift(scan);
-  data.scans = data.scans.slice(0, 20);
-  saveDemoScans(data.scans);
-  renderAll();
+  const desktop = $("#desktopViewport").checked;
+  const mobile = $("#mobileViewport").checked;
 
-
-   $("#scanFeedback").textContent="Demo request recorded locally only. No website was accessed and no scan was run.";toast("Demo record created  no real scan executed.");navigate("history");
-  }else{
-   const result=await window.OmniSightAPI.createScan({target_id:$("#target").value,viewports:[desktop?"desktop":null,mobile?"mobile":null].filter(Boolean)});
-   $("#scanFeedback").textContent=`Scan request accepted${result?.id||result?.scan_id?` (${result.id||result.scan_id})`:""}. Refreshing backend data.`;toast("Scan request sent to backend.");await loadData();navigate("history");
+  if (!desktop && !mobile) {
+    $("#scanFeedback").textContent = "Select at least one viewport.";
+    return;
   }
- }catch(error){$("#scanFeedback").textContent=`Scan request failed: ${error.message}`;toast("Scan request failed.");}
- finally{btn.disabled=false;btn.innerHTML='Run scan <span>→</span>'}
+
+  if (!$("#target").value) {
+    $("#scanFeedback").textContent = "Choose a configured target first.";
+    return;
+  }
+
+  const btn = $("#runScanButton");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Request pending...';
+  $("#scanFeedback").textContent = "";
+
+  try {
+    const result = await window.OmniSightAPI.createScan({
+      target_id: $("#target").value,
+      viewports: [
+        desktop ? "desktop" : null,
+        mobile ? "mobile" : null
+      ].filter(Boolean)
+    });
+
+    $("#scanFeedback").textContent =
+      `Scan request accepted${
+        result?.id || result?.scan_id
+          ? ` (${result.id || result.scan_id})`
+          : ""
+      }. Refreshing backend data.`;
+
+    toast("Scan request sent to backend.");
+    await loadData();
+    navigate("history");
+  } catch (error) {
+    $("#scanFeedback").textContent =
+      `Scan request failed: ${error.message}`;
+    toast("Scan request failed.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Run scan <span>↗</span>';
+  }
 }
-async function reviewAction(action){
- if(!currentReview)return;const id=currentReview.id||currentReview.issue_id,buttons=$$("#reviewActions button");buttons.forEach(b=>b.disabled=true);
- try{
-  if(isDemo()){
-   const i=data.issues.find(x=>String(x.id||x.issue_id)===String(id));
-   if(action==="approve"){i.state="applied";i.verification_outcome="Approved in demo only — no code changed."}
-   else if(action==="reject"){i.state="detected";i.verification_outcome="Proposal rejected in demo only."}
-   else {i.state="inconclusive";i.verification_outcome="No verification executed in demo mode."}
-   saveDemoIssues(data.issues);
-   renderAll();openReview(id);toast(action==="verify"?"Demo verification was not run.":"Demo state updated locally only.");return;
+async function reviewAction(action) {
+  if (!currentReview) return;
+
+  const id = currentReview.id || currentReview.issue_id;
+  const buttons = $$("#reviewActions button");
+
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  try {
+    if (action === "approve") {
+      await window.OmniSightAPI.approveFix(id);
+    } else if (action === "reject") {
+      await window.OmniSightAPI.rejectFix(id);
+    } else if (action === "verify") {
+      await window.OmniSightAPI.verifyFix(id);
+    } else {
+      return;
+    }
+
+    toast("Backend accepted the request. Reloading issue data.");
+    await loadData();
+    openReview(id);
+  } catch (error) {
+    toast(`Request failed: ${error.message}`);
+
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
   }
-  if(action==="approve")await window.OmniSightAPI.approveFix(id);
-  else if(action==="reject")await window.OmniSightAPI.rejectFix(id);
-  else await window.OmniSightAPI.verifyFix(id);
-  toast("Backend accepted the request. Reloading current issue state.");await loadData();openReview(id);
- }catch(error){toast(`Request failed: ${error.message}`);buttons.forEach(b=>b.disabled=false)}
 }
 document.addEventListener("click",e=>{
  const page=e.target.closest("[data-page]");if(page){e.preventDefault();navigate(page.dataset.page);return}
@@ -345,7 +379,6 @@ document.addEventListener("click",e=>{
   return;
 }
  if(e.target.closest("#refreshButton")){loadData();return}
- if(e.target.closest("#dismissBanner")){$("#dataBanner").hidden=true;return}
  if(e.target.closest("#themeToggle")){document.body.classList.toggle("dark");return}
  if(e.target.closest("#backToIssues")){navigate("issues");return}
  if(e.target.closest("#approveFix")){reviewAction("approve");return}
@@ -356,7 +389,6 @@ document.addEventListener("click",e=>{
 $("#scanForm").addEventListener("submit",handleScan);
 $("#statusFilter").addEventListener("change",renderIssues);
 $("#globalSearch").addEventListener("input",()=>{if($("#globalSearch").value.trim())navigate("issues");renderIssues()});
-$("#demoMode").addEventListener("change",loadData);
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
     e.preventDefault();
