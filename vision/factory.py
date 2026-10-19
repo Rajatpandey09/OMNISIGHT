@@ -26,15 +26,6 @@ def _build(name: str) -> VisionProvider:
     if name == "mock":
         from .providers.mock import MockProvider
         return MockProvider()
-    if name == "gemini":
-        from .providers.gemini import GeminiProvider
-        return GeminiProvider()
-    if name == "openai":
-        from .providers.openai_provider import OpenAIProvider
-        return OpenAIProvider()
-    if name == "anthropic":
-        from .providers.anthropic_provider import AnthropicProvider
-        return AnthropicProvider()
     if name == "ollama":
         from .providers.ollama import OllamaProvider
         return OllamaProvider()
