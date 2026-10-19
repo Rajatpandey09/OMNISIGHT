@@ -301,16 +301,28 @@ select option {
   position: relative;
   z-index: 1;
   min-width: 0;
-  animation: fadeIn 0.4s ease both;
 }
 
 .page.active {
   display: block;
+  animation: pageEnter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page.active {
+    animation: none;
+  }
 }
 
 /* ----- Sidebar ----- */
@@ -438,8 +450,11 @@ select option {
   width: 3px;
   background: var(--gradient-primary);
   opacity: 0;
-  transform: translateX(-3px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: scaleY(0.45);
+  transform-origin: center;
+  transition:
+    opacity 240ms ease,
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nav-link:hover {
@@ -458,7 +473,7 @@ select option {
 
 .nav-link.active::before {
   opacity: 1;
-  transform: translateX(0);
+  transform: scaleY(1);
 }
 
 .nav-icon {
@@ -3520,10 +3535,12 @@ pre,
       0 2px 8px rgba(124, 108, 242, 0.14),
       inset 0 1px 0 rgba(255, 255, 255, 0.95);
 
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      background 0.2s ease;
+        transition:
+      background-color 220ms ease,
+      color 220ms ease,
+      border-color 220ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease;
   }
 
   .top-actions .searchbox:focus-within {
@@ -3560,6 +3577,8 @@ pre,
 }
 
 /* OmniSight — Compact, highlighted mobile search bar */
+
+/* OmniSight — Compact mobile search bar */
 @media (max-width: 700px) {
   .top-actions .searchbox {
     flex: 0 1 175px;
@@ -3577,9 +3596,11 @@ pre,
       inset 0 1px 0 rgba(255, 255, 255, 0.95);
 
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      background 0.2s ease;
+      background-color 220ms ease,
+      color 220ms ease,
+      border-color 220ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease;
   }
 
   .top-actions .searchbox:focus-within {
@@ -3605,6 +3626,7 @@ pre,
     display: none;
   }
 }
+
 
 /* Very narrow phones */
 @media (max-width: 380px) {
@@ -4152,5 +4174,329 @@ body[data-theme="dark"] table th {
   body.dark-mode .top-actions .searchbox > span,
   body[data-theme="dark"] .top-actions .searchbox > span {
     color: #D0D0D0;
+  }
+}
+/* Desktop layout — use normal browser scaling */
+@media (min-width: 901px) {
+  html {
+    zoom: 1;
+  }
+
+  body,
+  .app-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .sidebar {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+/* ==========================================================================
+   OmniSight: Graphite + Silver only (no light mode)
+   Applies the dark palette unconditionally, so it no longer depends on
+   body.dark. Paste at the very end of style.css.
+   ========================================================================== */
+
+/* 1. Tokens. Triple :root beats the light-theme block's specificity. */
+:root:root:root {
+  color-scheme: dark;
+
+  --bg: #101010;
+  --surface: #181818;
+  --surface-hover: #222222;
+  --surface-soft: #202020;
+
+  --border: #303030;
+  --border-strong: #444444;
+  --text-main: #F2F2F2;
+  --text-secondary: #B5B5B5;
+  --text-muted: #929292;
+  --highlight: rgba(255, 255, 255, 0.035);
+
+  --primary: #B8B8B8;
+  --primary-deep: #8F8F8F;
+  --primary-text: #E0E0E0;
+  --primary-soft: #262626;
+
+  --accent-blue: #A7C7E7;
+  --accent-green: #65CDAA;
+  --accent-coral: #F28B82;
+  --accent-peach: #332B25;
+  --accent-mint: #20342D;
+
+  --gradient-primary: linear-gradient(135deg, #D0D0D0, #777777);
+  --gradient-text: linear-gradient(135deg, #F0F0F0, #AFAFAF);
+  --gradient-hero: linear-gradient(135deg, #202020, #303030);
+  --gradient-soft: linear-gradient(135deg, #202020, #171717);
+
+  --sidebar-bg: linear-gradient(180deg, #151515, #101010);
+  --topbar-bg: rgba(16, 16, 16, 0.94);
+  --aside-bg: linear-gradient(135deg, #202020, #181818);
+  --input-bg: #181818;
+  --track-bg: #444444;
+  --shimmer: rgba(255, 255, 255, 0.035);
+  --glow: rgba(255, 255, 255, 0.025);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.34);
+  --shadow-xl: 0 18px 40px rgba(0, 0, 0, 0.42);
+  --depth-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.35);
+  --sidebar-shadow: rgba(0, 0, 0, 0.30);
+
+  --m-indigo-bg: linear-gradient(145deg, #202020, #181818);
+  --m-indigo-bd: #383838;
+  --m-coral-bg: linear-gradient(145deg, #242020, #191919);
+  --m-coral-bd: #403535;
+  --m-mint-bg: linear-gradient(145deg, #1C2521, #171C19);
+  --m-mint-bd: #304138;
+  --m-amber-bg: linear-gradient(145deg, #25221C, #191817);
+  --m-amber-bd: #40392D;
+
+  --illus-bg: radial-gradient(ellipse at center, #292929, #171717 70%);
+  --screen-border: #555555;
+  --screen-bg: #1B1B1B;
+  --screen-line: #383838;
+  --check-bg: #20342D;
+  --check-text: #8BE0BC;
+  --thumb-bg: linear-gradient(135deg, #242424, #191919);
+  --thumb-bar: #383838;
+  --code-bg: linear-gradient(135deg, #202020, #141414);
+
+  --st-detected: #8B9BB8;     --st-detected-text: #D2D8E2;
+  --st-proposed: #91B6E8;     --st-proposed-text: #C6DDF9;
+  --st-applied: #B9B9B9;      --st-applied-text: #E0E0E0;
+  --st-verified: #65CDAA;     --st-verified-text: #A1E8CF;
+  --st-failed: #F28B82;       --st-failed-text: #FFB8B1;
+  --st-inconclusive: #89909A; --st-inconclusive-text: #D0D3D8;
+
+  --warn-bg: rgba(245, 158, 11, 0.09);
+  --warn-bd: rgba(245, 158, 11, 0.35);
+  --warn-accent: #F0BB68;
+  --warn-text: #F0CB91;
+}
+
+/* 2. Surfaces that don't depend on the .dark class */
+html body {
+  background: var(--bg);
+  color: var(--text-main);
+}
+
+html body .sidebar {
+  background: var(--sidebar-bg);
+  border-color: var(--border);
+}
+
+html body .topbar {
+  background: var(--topbar-bg);
+  border-color: var(--border);
+}
+
+html body .nav-link::before {
+  background: #C4C4C4;
+}
+
+html body .nav-link:hover,
+html body .nav-link.active {
+  background: #242424;
+  border-color: #383838;
+  color: #F0F0F0;
+  box-shadow: none;
+}
+
+html body .privacy-card,
+html body .profile {
+  background: #171717;
+  border-color: #303030;
+  box-shadow: none;
+}
+
+html body .privacy-icon {
+  background: #383838;
+  color: #F2F2F2;
+  box-shadow: none;
+}
+
+html body .privacy-rule {
+  background: #303030;
+}
+
+html body .privacy-rule::after {
+  background: #BDBDBD;
+}
+
+html body .brand-mark {
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.35), 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+html body table th {
+  background: #202020;
+  color: #DADADA;
+}
+
+html body .data-banner {
+  background: #171717;
+  border-color: #333333;
+}
+
+html body :focus-visible {
+  outline-color: #D0D0D0;
+}
+
+/* 3. Hero: graphite instead of purple-blue */
+html body #page-overview .page-heading {
+  background: var(--gradient-hero);
+  border: 1px solid #383838;
+  box-shadow: none;
+}
+
+html body #page-overview .page-heading h1,
+html body #page-overview .page-heading p,
+html body #page-overview .page-heading .eyebrow {
+  color: #F2F2F2;
+}
+
+html body #page-overview .page-heading h1 {
+  max-width: 850px;
+  font-size: clamp(36px, 3.2vw, 54px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+/* Hero button: silver-white with dark text (beats the light-theme rule) */
+html body #page-overview .page-heading .button-dark,
+html body #page-overview .page-heading .button-dark:hover {
+  background: #F2F2F2 !important;
+  border-color: #F2F2F2 !important;
+  color: #111111 !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), 0 10px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* 4. Buttons and controls: silver instead of purple */
+html body .button-dark {
+  color: #111111;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+html body .button-dark:hover {
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), 0 14px 28px rgba(0, 0, 0, 0.4);
+}
+
+html body .icon-button:hover,
+html body .mobile-menu:hover {
+  background: #383838;
+  border-color: #555555;
+  color: #F2F2F2;
+}
+
+html body .priority-row:hover .priority-mark,
+html body .workflow li:hover span,
+html body .review-aside .checklist li:hover > span,
+html body .viewport-option:has(input:checked) .viewport-art {
+  color: #111111;
+}
+
+/* 5. Mobile search bar: undo the lavender styling */
+@media (max-width: 700px) {
+  html body .top-actions .searchbox {
+    background: #181818;
+    border-color: #383838;
+    box-shadow: none;
+  }
+
+  html body .top-actions .searchbox:focus-within {
+    background: #202020;
+    border-color: #AFAFAF;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+  }
+
+  html body .top-actions .searchbox > span {
+    color: #D0D0D0;
+  }
+}
+
+/* 6. No light mode, so hide the theme toggle in the sidebar */
+.theme-mini {
+  display: none !important;
+}
+/* OmniSight final visual correction: graphite + silver */
+html body {
+  background: #101010 !important;
+  color: #F2F2F2;
+}
+
+html body .sidebar,
+html body .topbar {
+  background: #111111 !important;
+  border-color: #303030 !important;
+}
+
+html body #page-overview .page-heading {
+  background: linear-gradient(135deg, #202020, #303030) !important;
+  border: 1px solid #383838 !important;
+  box-shadow: none !important;
+  border-radius: 24px;
+}
+
+html body #page-overview .page-heading h1,
+html body #page-overview .page-heading p,
+html body #page-overview .page-heading .eyebrow {
+  color: #F2F2F2 !important;
+  -webkit-text-fill-color: #F2F2F2 !important;
+}
+
+html body #page-overview .page-heading h1 em {
+  color: #C7C7C7 !important;
+  -webkit-text-fill-color: #C7C7C7 !important;
+  background: none !important;
+}
+
+html body .surface,
+html body .metric-card,
+html body .privacy-card,
+html body .profile {
+  background: #181818 !important;
+  border-color: #303030 !important;
+  box-shadow: none;
+}
+
+/* Keep the hero heading controlled on desktop */
+@media (min-width: 901px) {
+  html body #page-overview .page-heading {
+    padding: 30px 36px !important;
+    min-height: 0 !important;
+    border-radius: 20px;
+  }
+
+  html body #page-overview .page-heading h1 {
+    max-width: 760px;
+    font-size: clamp(32px, 2.6vw, 44px) !important;
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+    margin: 8px 0 12px;
+  }
+
+  html body #page-overview .page-heading p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+}
+/* OmniSight: scale the entire desktop UI to 75% */
+@media (min-width: 901px) {
+  html {
+    zoom: 0.75;
+  }
+
+  body,
+  .app-shell {
+    min-height: 133.3333vh;
+  }
+
+  .sidebar {
+    height: 133.3333vh;
   }
 }
