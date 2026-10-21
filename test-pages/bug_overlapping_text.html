@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Test - Overlapping Text</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+
+    .test-card {
+      position: relative;
+      width: min(90%, 500px);
+      min-height: 180px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .first-text {
+      position: absolute;
+      top: 65px;
+      left: 25px;
+      font-size: 24px;
+      color: #222;
+      z-index: 2;
+    }
+
+    .second-text {
+      position: absolute;
+      top: 78px;
+      left: 35px;
+      font-size: 24px;
+      color: #c62828;
+      z-index: 3;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Overlapping Text Test</h1>
+    <p>QA test case: overlapping_text</p>
+
+    <section class="test-card">
+      <p class="first-text">This text should be readable.</p>
+      <p class="second-text">Overlapping text defect</p>
+    </section>
+  </main>
+</body>
+</html>
