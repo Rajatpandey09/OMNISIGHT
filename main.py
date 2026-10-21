@@ -11,8 +11,12 @@ logger = logging.getLogger("omnisight_backend")
 
 app = FastAPI(
     title="OmniSight Backend & Browser Automation",
-    version="1.3.0",
-    description="Backend service aligned with teammate VLM/AI prompt schema."
+    version="1.5.0",
+    description="Production-grade backend service for multimodal UI self-healing and browser automation.",
+    contact={
+        "name": "Priyanshu",
+        "role": "Backend & Browser Automation Engineer"
+    }
 )
 
 ARTIFACT_DIR = "artifacts"
@@ -33,7 +37,7 @@ async def add_process_time_header(request: Request, call_next):
     logger.info(f"Path: {request.url.path} | Method: {request.method} | Duration: {process_time:.4f}s | Status: {response.status_code}")
     return response
 
-@app.get("/", status_code=status.HTTP_200_OK)
+@app.get("/", status_code=status.HTTP_200_OK, tags=["System"])
 def read_root():
     return {
         "service": "OmniSight Backend & Browser Automation",
@@ -42,11 +46,42 @@ def read_root():
         "role": "Member 2 - Backend & Browser Automation"
     }
 
-@app.get("/health", status_code=status.HTTP_200_OK)
+@app.get("/health", status_code=status.HTTP_200_OK, tags=["System"])
 def health_check():
     return {"status": "healthy", "service": "OmniSight Backend"}
 
-@app.post("/api/scan", status_code=status.HTTP_200_OK)
+@app.get("/api/artifacts", status_code=status.HTTP_200_OK, tags=["Artifacts"])
+def list_artifacts():
+    """List all generated screenshot artifacts and their file sizes."""
+    if not os.path.exists(ARTIFACT_DIR):
+        return {"artifacts": [], "total_files": 0}
+    
+    files = []
+    for filename in os.listdir(ARTIFACT_DIR):
+        file_path = os.path.join(ARTIFACT_DIR, filename)
+        if os.path.isfile(file_path):
+            files.append({
+                "filename": filename,
+                "size_bytes": os.path.getsize(file_path)
+            })
+    return {"artifacts": files, "total_files": len(files)}
+
+@app.delete("/api/artifacts/clean", status_code=status.HTTP_200_OK, tags=["Artifacts"])
+def clean_artifacts():
+    """Delete all stored screenshot artifacts to free up local disk space."""
+    if not os.path.exists(ARTIFACT_DIR):
+        return {"message": "Artifact directory does not exist."}
+    
+    deleted_count = 0
+    for filename in os.listdir(ARTIFACT_DIR):
+        file_path = os.path.join(ARTIFACT_DIR, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            deleted_count += 1
+            
+    return {"message": f"Successfully deleted {deleted_count} artifact file(s)."}
+
+@app.post("/api/scan", status_code=status.HTTP_200_OK, tags=["Automation"])
 async def execute_browser_scan(payload: ScanRequest):
     if not any(domain in payload.url for domain in ALLOWED_DOMAINS):
         raise HTTPException(
@@ -74,13 +109,25 @@ async def execute_browser_scan(payload: ScanRequest):
             await page.screenshot(path=desktop_screenshot_path, full_page=True)
             
             desktop_metrics = await page.evaluate("""() => {
+                const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="submit"]')).map(el => {
+                    const rect = el.getBoundingClientRect();
+                    return {
+                        selector: el.id ? `#${el.id}` : (el.className ? `.${el.className.split(' ')[0]}` : el.tagName.toLowerCase()),
+                        text: el.innerText.trim() || el.value || '',
+                        x: rect.x,
+                        y: rect.y,
+                        width: rect.width,
+                        height: rect.height,
+                        is_off_screen: rect.right > window.innerWidth || rect.left < 0
+                    };
+                });
                 const hiddenElements = Array.from(document.querySelectorAll('[hidden], .hidden, [style*="display: none"]'))
                     .map(el => el.id || el.className || 'unnamed_control');
                 return {
                     scroll_width: document.documentElement.scrollWidth,
                     scroll_height: document.documentElement.scrollHeight,
                     has_horizontal_overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-                    buttons: [],
+                    buttons: buttons,
                     hidden_controls: hiddenElements
                 };
             }""")
