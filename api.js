@@ -76,13 +76,24 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        throw new ApiError(
-          `HTTP ${response.status}: ${response.statusText}`,
-          response.status,
-          response,
-          false
-        );
-      }
+  const detail =
+    data?.detail ||
+    data?.message ||
+    data?.error ||
+    response.statusText ||
+    "Unknown API error";
+
+  throw new ApiError(
+    `HTTP ${response.status}: ${
+      typeof detail === "string"
+        ? detail
+        : JSON.stringify(detail)
+    }`,
+    response.status,
+    response,
+    false
+  );
+}
 
       return data;
     } catch (error) {

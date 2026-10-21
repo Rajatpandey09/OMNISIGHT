@@ -163,21 +163,26 @@ async function loadData() {
   $("#metricGrid").classList.add("is-loading");
 
   try {
-    const results = await Promise.all([
-      window.OmniSightAPI.dashboard(),
-      window.OmniSightAPI.scans(),
-      window.OmniSightAPI.issues(),
-      window.OmniSightAPI.targets()
-    ]);
+    const results = await Promise.allSettled([
+  window.OmniSightAPI.dashboard(),
+  window.OmniSightAPI.scans(),
+  window.OmniSightAPI.issues(),
+  window.OmniSightAPI.targets()
+]);
 
-    if (generation !== loadGeneration) return;
+if (generation !== loadGeneration) return;
 
-    data = {
-      dashboard: results[0] || {},
-      scans: normalizeArray(results[1]),
-      issues: normalizeArray(results[2]),
-      targets: normalizeTargets(results[3])
-    };
+const getResult = (index, fallback) =>
+  results[index].status === "fulfilled"
+    ? results[index].value
+    : fallback;
+
+data = {
+  dashboard: getResult(0, {}),
+  scans: normalizeArray(getResult(1, [])),
+  issues: normalizeArray(getResult(2, [])),
+  targets: normalizeTargets(getResult(3, []))
+};
 
     renderAll();
     fillTargets();
@@ -232,33 +237,58 @@ async function loadData() {
   }
 }
 function normalizeArray(v){return Array.isArray(v)?v:Array.isArray(v?.items)?v.items:Array.isArray(v?.results)?v.results:[]}
-function normalizeTargets(v){return normalizeArray(v).map(t=>({id:t.id??t.target_id??t.url,name:t.name??t.label??t.url??t.target_url??String(t.id)}))}
+
+function normalizeTargets(v) {
+  return normalizeArray(v).map(t => ({
+    id: t.id ?? t.target_id ?? t.url ?? t.target_url,
+    name: t.name ?? t.label ?? t.url ?? t.target_url ?? String(t.id),
+    url: t.url ?? t.target_url ?? t.targetUrl ?? ""
+  }));
+}
+
 function fillTargets() {
   const select = $("#target");
-  const previousValue = select.value;
+  if (!select) return;
 
+  const previousValue = select.value;
   select.innerHTML = "";
 
-  if (!data.targets.length) {
-    select.add(new Option("No configured targets", ""));
+  const targets = Array.isArray(data.targets) ? data.targets : [];
+
+  if (!targets.length) {
+    select.add(new Option("No targets available", ""));
     $("#targetHelp").textContent =
-      "Configure a target through the backend before starting a scan.";
+      "The backend returned no configured targets. Check the API connection.";
+    console.error("No targets available in data.targets:", data.targets);
     return;
   }
 
-  data.targets.forEach(target => {
-    const option = new Option(target.name, target.url || target.id);
-option.dataset.url = target.url || target.id;
-select.add(option);
+  targets.forEach(target => {
+    const url =
+      target.url ||
+      target.target_url ||
+      target.targetUrl ||
+      "";
+
+    if (!url) {
+      console.warn("Skipping target without URL:", target);
+      return;
+    }
+
+    const option = new Option(target.name || url, url);
+    option.dataset.url = url;
+    select.add(option);
   });
 
-  if (data.targets.some(target => String(target.id) === previousValue)) {
+  if ([...select.options].some(option => option.value === previousValue)) {
     select.value = previousValue;
   }
 
   $("#targetHelp").textContent =
-  "Select a website configured in the backend.";
+    "Targets loaded from the connected backend.";
+  console.log("Targets populated:", [...select.options].map(o => o.value));
 }
+
 function navigate(page){
  const pages=["overview","scan","issues","history","review"];
  if(!pages.includes(page))return;
@@ -268,6 +298,53 @@ function navigate(page){
  $("#sidebar").classList.remove("open");window.scrollTo({top:0,behavior:"smooth"});
  if(page==="issues")renderIssues();
 }
+
+async function handleScan(e) {
+  e.preventDefault();
+
+  const desktop = $("#desktopViewport").checked;
+  const mobile = $("#mobileViewport").checked;
+  const select = $("#target");
+  const option = select.options[select.selectedIndex];
+  const url = option?.dataset.url || option?.value;
+
+  if (!desktop && !mobile) {
+    $("#scanFeedback").textContent = "Select at least one viewport.";
+    return;
+  }
+
+  if (!url || !/^https?:\/\//i.test(url)) {
+    $("#scanFeedback").textContent = "Select a valid target URL.";
+    return;
+  }
+
+  const btn = $("#runScanButton");
+  btn.disabled = true;
+  $("#scanFeedback").textContent = "Running browser scan...";
+
+  try {
+    const result = await window.OmniSightAPI.createScan({
+      url,
+      viewports: [
+        ...(desktop ? ["desktop"] : []),
+        ...(mobile ? ["mobile"] : [])
+      ]
+    });
+
+    $("#scanFeedback").textContent =
+      `Scan completed: ${result.scan_id || result.id || "success"}.`;
+    console.log("Scan result:", result);
+    toast("Browser scan completed.");
+  } catch (error) {
+    console.error("Scan failed:", error);
+    $("#scanFeedback").textContent = `Scan failed: ${error.message}`;
+    toast("Scan request failed.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Run scan <span>↗</span>';
+  }
+}
+
 function imagePanel(url,label){
  if(url)return `<figure class="screenshot-frame"><img src="${esc(url)}" alt="${esc(label)} screenshot" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="image-unavailable" hidden>Screenshot could not be loaded.</div><figcaption>${esc(label)}</figcaption></figure>`;
  return `<div class="screenshot-placeholder"><div class="placeholder-browser"><i></i><i></i><i></i></div><div class="placeholder-lines"><span></span><span></span><span></span></div><div class="placeholder-message">No screenshot supplied by the backend</div><small>${esc(label)}</small></div>`;
@@ -285,55 +362,7 @@ else if (state === "applied") actions.innerHTML = '<button class="button button-
 
  else actions.innerHTML='<span class="action-note">Available actions depend on the current backend state.</span>';
 }
-async function handleScan(e) {
-  e.preventDefault();
 
-  const desktop = $("#desktopViewport").checked;
-  const mobile = $("#mobileViewport").checked;
-
-  if (!desktop && !mobile) {
-    $("#scanFeedback").textContent = "Select at least one viewport.";
-    return;
-  }
-
-  if (!$("#target").value) {
-    $("#scanFeedback").textContent = "Choose a configured target first.";
-    return;
-  }
-
-  const btn = $("#runScanButton");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Request pending...';
-  $("#scanFeedback").textContent = "";
-
-  try {
-    const result = await window.OmniSightAPI.createScan({
-      target_id: $("#target").value,
-      viewports: [
-        desktop ? "desktop" : null,
-        mobile ? "mobile" : null
-      ].filter(Boolean)
-    });
-
-    $("#scanFeedback").textContent =
-      `Scan request accepted${
-        result?.id || result?.scan_id
-          ? ` (${result.id || result.scan_id})`
-          : ""
-      }. Refreshing backend data.`;
-
-    toast("Scan request sent to backend.");
-    await loadData();
-    navigate("history");
-  } catch (error) {
-    $("#scanFeedback").textContent =
-      `Scan request failed: ${error.message}`;
-    toast("Scan request failed.");
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Run scan <span>↗</span>';
-  }
-}
 async function reviewAction(action) {
   if (!currentReview) return;
 
