@@ -82,3 +82,15 @@ Fixed page	PASS — button inside viewport	PASS
 Evidence: PASS and FAIL screenshots saved in eval/evidence/.
 
 Status: Test performed; evidence captured.
+| hidden_control | Hidden control | Submit button is not visible | Reproduced |
+Horizontal Overflow — REPRODUCED
+
+* Test page: eval/test-pages/bug_overflow.html
+* Expected defect: Horizontal scrolling on a narrow viewport.
+* Viewport width: 390 px
+* Document scroll width: 920 px
+* Horizontal overflow: true
+* Excess width: 530 px
+* Evidence: Safari Developer Tools Console output.
+* Status: REPRODUCED
+* Notes: The page width exceeds the viewport width, confirming horizontal overflow at the tested mobile width.
