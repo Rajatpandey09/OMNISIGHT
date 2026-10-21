@@ -10,11 +10,13 @@
 
 // API base URL configuration
 const API_BASE_URL = (() => {
-  const envBase = typeof process !== "undefined" && process.env && process.env.OMNISIGHT_API_BASE_URL;
-  const globalConfig = typeof window !== "undefined" && window.OmniSightAPIConfig && window.OmniSightAPIConfig.baseUrl;
-  return envBase || globalConfig || "https://your-backend-domain.com/api"; // Default fallback for production
-})();
+  const globalConfig =
+    typeof window !== "undefined" &&
+    window.OmniSightAPIConfig &&
+    window.OmniSightAPIConfig.baseUrl;
 
+  return globalConfig || "http://127.0.0.1:8001/api";
+})();
 // API client configuration
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEMO_LATENCY_MS = 600; // Simulate network delay for demo mode
@@ -59,7 +61,7 @@ class ApiClient {
         headers,
         body: options.body ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,
-        credentials: "same-origin" // Use same-origin for cookies/auth if needed
+        credentials: "omit" // Use same-origin for cookies/auth if needed
       });
 
       const contentType = response.headers.get("content-type");
@@ -168,11 +170,23 @@ class ApiClient {
  }
 
   async createScan(payload) {
-    return this.request("/scans", {
-      method: "POST",
-      body: payload
-    });
- }
+  const targetUrl =
+    payload.url ||
+    payload.target_url ||
+    payload.targetUrl;
+
+  if (!targetUrl) {
+    throw new ApiError("A target URL is required to start a scan.");
+  }
+
+  return this.request("/scan", {
+    method: "POST",
+    body: {
+      url: targetUrl,
+      scan_id: `scan-${Date.now()}`
+    }
+  });
+}
 
   async approveFix(id) {
     return this.request("/approve_fix", {

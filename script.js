@@ -247,14 +247,17 @@ function fillTargets() {
   }
 
   data.targets.forEach(target => {
-    select.add(new Option(target.name, target.id));
+    const option = new Option(target.name, target.url || target.id);
+option.dataset.url = target.url || target.id;
+select.add(option);
   });
 
   if (data.targets.some(target => String(target.id) === previousValue)) {
     select.value = previousValue;
   }
 
-  $("#targetHelp").textContent = "Targets are provided by the backend.";
+  $("#targetHelp").textContent =
+  "Select a website configured in the backend.";
 }
 function navigate(page){
  const pages=["overview","scan","issues","history","review"];
