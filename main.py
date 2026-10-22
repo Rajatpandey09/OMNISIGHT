@@ -11,8 +11,8 @@ logger = logging.getLogger("omnisight_backend")
 
 app = FastAPI(
     title="OmniSight Backend & Browser Automation",
-    version="1.5.0",
-    description="Production-grade backend service for multimodal UI self-healing and browser automation.",
+    version="1.6.0",
+    description="Production-grade backend service for multimodal UI self-healing and browser automation with resilient retries.",
     contact={
         "name": "Priyanshu",
         "role": "Backend & Browser Automation Engineer"
@@ -27,6 +27,18 @@ ALLOWED_DOMAINS = ["localhost", "127.0.0.1", "example.com"]
 class ScanRequest(BaseModel):
     url: str
     scan_id: str
+
+async def navigate_with_retry(page, url, retries=3, delay=2):
+    """Attempt to navigate to a target URL with exponential backoff to handle network flakiness."""
+    for attempt in range(retries):
+        try:
+            await page.goto(url, timeout=30000, wait_until="networkidle")
+            return
+        except Exception as e:
+            if attempt == retries - 1:
+                raise e
+            logger.warning(f"Navigation attempt {attempt + 1} failed for {url}: {str(e)}. Retrying in {delay * (attempt + 1)}s...")
+            await asyncio.sleep(delay * (attempt + 1))
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -102,7 +114,8 @@ async def execute_browser_scan(payload: ScanRequest):
             context = await browser.new_context()
             page = await context.new_page()
             
-            await page.goto(payload.url, timeout=30000, wait_until="networkidle")
+            # Use resilient retry navigation helper
+            await navigate_with_retry(page, payload.url)
             
             # --- Desktop Viewport Capture ---
             await page.set_viewport_size({"width": 1366, "height": 768})
