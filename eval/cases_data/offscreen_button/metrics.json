@@ -1,0 +1,15 @@
+{
+  "case_id": "offscreen_button",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "expected_defect": "Off-screen button",
+  "observed_signal": {
+    "button_outside_viewport": true
+  },
+  "scanner_result": "pending",
+  "vision_result": "pending",
+  "label": "Inconclusive",
+  "verification_status": "not_verified"
+}
