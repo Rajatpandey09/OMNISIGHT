@@ -14,7 +14,7 @@ Test Environment
 Test Results
 
 Test ID	Defect	Actual Result	Status	Evidence
-TC01	Horizontal overflow	Pending testing	Not Run	Pending
+| TC01 | Horizontal overflow reproduced on mobile (390 × 844); document width was 920 px | Fail | eval/cases_data/horizontal_overflow/screenshot.png | Confirmed horizontal overflow; scanner and vision results still pending |
 TC02	Off-screen button	Pending testing	Not Run	Pending
 TC03	Overlapping text	Pending testing	Not Run	Pending
 TC04	Hidden control	Pending testing	Not Run	Pending
