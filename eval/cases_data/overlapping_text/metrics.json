@@ -1,0 +1,16 @@
+{
+  "case_id": "overlapping_text",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "expected_defect": "Overlapping text",
+  "observed_signal": {
+    "text_overlap": true,
+    "readability_affected": true
+  },
+  "scanner_result": "pending",
+  "vision_result": "pending",
+  "label": "Inconclusive",
+  "verification_status": "not_verified"
+}
