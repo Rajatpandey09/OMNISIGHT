@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI, Request, HTTPException, status
 from pydantic import BaseModel
 from playwright.async_api import async_playwright
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,11 +43,17 @@ async def navigate_with_retry(page, url, retries=3, delay=2):
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
+    request_id = str(uuid.uuid4())
     start_time = asyncio.get_event_loop().time()
+    
+    # Pass request_id through headers
     response = await call_next(request)
+    
     process_time = asyncio.get_event_loop().time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
-    logger.info(f"Path: {request.url.path} | Method: {request.method} | Duration: {process_time:.4f}s | Status: {response.status_code}")
+    response.headers["X-Request-ID"] = request_id
+    
+    logger.info(f"ReqID: {request_id} | Path: {request.url.path} | Method: {request.method} | Duration: {process_time:.4f}s | Status: {response.status_code}")
     return response
 
 @app.get("/", status_code=status.HTTP_200_OK, tags=["System"])
