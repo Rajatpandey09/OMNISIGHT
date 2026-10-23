@@ -95,7 +95,7 @@ TC06 — Desktop: Fix verification
 Proposed Fix Verification
 
 * Confirm the original UI defect is reproducible before applying a fix.
-* Review the proposed CSS change and identify the affected element.
+* Review the proposed CSS change and identify the affected element. 
 * Verify the layout again at the same viewport size after the fix.
 * Record the actual result and supporting evidence.
-* Mark the issue as verified only after successful follow-up testing.
+* Mark the issue as verified only after successful follow-up testing. 
