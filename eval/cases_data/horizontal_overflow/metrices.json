@@ -1,0 +1,21 @@
+{
+  "case_id": "horizontal_overflow",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "expected_defect": "Horizontal overflow",
+  "expected_signal": {
+    "horizontal_overflow": true,
+    "document_width_greater_than_viewport": true
+  },
+  "observed_signal": {
+    "viewport_width": 390,
+    "document_width": 920,
+    "horizontal_overflow": true
+  },
+  "scanner_result": "pending",
+  "vision_result": "pending",
+  "label": "Inconclusive",
+  "verification_status": "not_verified"
+}
