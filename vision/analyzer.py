@@ -17,11 +17,12 @@ def extract_json(text: str) -> dict:
 
 def analyze(provider: VisionProvider, scan_id: str, viewport: str,
             width: int, height: int, image_png: bytes,
-            metrics: dict | None = None, timeout: float = 30.0) -> AnalysisResult:
+            metrics: dict | None = None, timeout: float = 30.0,
+            html: str | None = None) -> AnalysisResult:
     def base():  # evaluated after the call: a fallback chain may switch providers
         return dict(scan_id=scan_id, viewport=viewport, provider=provider.name)
 
-    user_prompt = build_user_prompt(viewport, width, height, metrics or {})
+    user_prompt = build_user_prompt(viewport, width, height, metrics or {}, html)
     try:
         raw = provider.analyze(image_png, SYSTEM_PROMPT, user_prompt, timeout)
     except MissingCredentials as e:
