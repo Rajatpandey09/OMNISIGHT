@@ -1,35 +1,31 @@
 {
+  "_note": "DRAFT. Page names are placeholders; agree final names and expected signals with Member 4 before Week 2.",
+  "viewports": {"desktop": [1366, 768], "mobile": [390, 844]},
   "cases": [
-    {
-      "case_id": "horizontal_overflow",
-      "file": "bug_overflow.html",
-      "expected_defect": "Horizontal overflow",
-      "expected_signal": "Content width exceeds viewport width and creates horizontal scrolling"
-    },
-    {
-      "case_id": "offscreen_button",
-      "file": "bug_offscreen_button.html",
-      "expected_defect": "Off-screen button",
-      "expected_signal": "Target button lies outside the visible viewport"
-    },
-    {
-      "case_id": "overlapping_text",
-      "file": "bug_overlapping_text.html",
-      "expected_defect": "Overlapping text",
-      "expected_signal": "Two or more text elements overlap"
-    },
-    {
-      "case_id": "hidden_control",
-      "file": "bug_hidden_control.html",
-      "expected_defect": "Hidden control",
-      "expected_signal": "Expected interactive control is not visible"
-    },
-    {
-      "case_id": "contrast_issue",
-      "file": "bug_contrast.html",
-      "expected_defect": "Low contrast",
-      "expected_signal": "Text contrast ratio is below the chosen WCAG threshold",
-      "optional": true
-    }
+    {"case_id": "overflow_mobile", "page": "eval/test-pages/bug_overflow.html", "viewport": "mobile",
+     "expected": [{"issue_type": "horizontal_overflow", "element": "wide banner"}],
+     "expected_signal": "scroll_width > viewport width"},
+    {"case_id": "overflow_desktop", "page": "eval/test-pages/bug_overflow.html", "viewport": "desktop",
+     "expected": [],
+     "expected_signal": "bug only appears on narrow screens"},
+    {"case_id": "offscreen_button_mobile", "page": "eval/test-pages/bug_offscreen_button.html", "viewport": "mobile",
+     "expected": [{"issue_type": "offscreen_button", "element": "submit button"}],
+     "expected_signal": "button bounding box outside viewport"},
+    {"case_id": "offscreen_button_desktop", "page": "eval/test-pages/bug_offscreen_button.html", "viewport": "desktop",
+     "expected": [],
+     "expected_signal": "button fully visible"},
+    {"case_id": "overlap_text_mobile", "page": "bug_overlapping_text.html", "viewport": "mobile",
+     "expected": [{"issue_type": "overlapping_text", "element": "heading and paragraph"}],
+     "expected_signal": "visible only in screenshot; geometry check may miss it"},
+    {"case_id": "hidden_control_mobile", "page": "bug_hidden_control.html", "viewport": "mobile",
+     "expected": [{"issue_type": "hidden_control", "element": "menu button"}],
+     "expected_signal": "control missing or hidden on mobile"},
+    {"case_id": "low_contrast_desktop", "page": "bug_contrast.html", "viewport": "desktop",
+     "expected": [{"issue_type": "low_contrast", "element": "body text"}],
+     "expected_signal": "optional case"},
+    {"case_id": "clean_mobile", "page": "clean.html", "viewport": "mobile",
+     "expected": [], "expected_signal": "no defects; tests false positives"},
+    {"case_id": "clean_desktop", "page": "clean.html", "viewport": "desktop",
+     "expected": [], "expected_signal": "no defects; tests false positives"}
   ]
 }
