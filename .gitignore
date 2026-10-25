@@ -5,18 +5,22 @@ __pycache__/
 *.pyc
 .venv/
 =======
+.DS_Store
+
+# Python environments and cache
 .venv/
 .venv312/
 __pycache__/
 *.py[cod]
-artifacts/
-backend/artifacts/
-backend/scan_records.json
+*.pyc
+
+# Environment secrets
 .env
 .env.*
 !.env.example
 
-__pycache__/
-*.pyc
+# Generated artifacts
 artifacts/
 >>>>>>> 659b091b162f0f44f259aeb51d74da8aa2f6d19f
+backend/artifacts/
+backend/scan_records.json

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Test - Horizontal Overflow</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #222;
+    }
+
+    header {
+      padding: 20px;
+      background: #243b53;
+      color: white;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    .overflow-box {
+      width: 900px;
+      padding: 24px;
+      margin-top: 20px;
+      background: #f5c6cb;
+      border: 3px solid #b02a37;
+    }
+
+    .overflow-box button {
+      padding: 12px 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Horizontal Overflow Test</h1>
+  </header>
+
+  <main>
+    <h2>Expected defect: Horizontal scrolling</h2>
+    <p>Resize the browser to mobile width to observe the defect.</p>
+
+    <section class="overflow-box">
+      <h2>Intentionally oversized content</h2>
+      <p>This 900-pixel-wide box exceeds a narrow mobile viewport.</p>
+      <button type="button">Test Button</button>
+    </section>
+  </main>
+</body>
+</html>

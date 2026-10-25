@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Low Contrast Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #ffffff;
+    }
+
+    .test-card {
+      padding: 30px;
+      border: 1px solid #dddddd;
+      max-width: 600px;
+    }
+
+    .low-contrast {
+      color: #d6d6d6;
+      background-color: #ffffff;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Low Contrast Test</h1>
+    <p>QA test case: contrast_issue</p>
+
+    <section class="test-card">
+      <p class="low-contrast">
+        This text has low contrast and is difficult to read.
+      </p>
+      <p>This text should be easier to read.</p>
+    </section>
+  </main>
+</body>
+</html>
