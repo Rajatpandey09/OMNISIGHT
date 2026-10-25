@@ -13,27 +13,25 @@ Test Environment
 
 Test Results
 
-Test ID	Defect	Actual Result	Status	Evidence
-| TC01 | Horizontal overflow reproduced on mobile (390 × 844); document width was 920 px | Fail | eval/cases_data/horizontal_overflow/screenshot.png | Confirmed horizontal overflow; scanner and vision results still pending |
-TC02	Off-screen button	Pending testing	Not Run	Pending
-TC03	Overlapping text	Pending testing	Not Run	Pending
-TC04	Hidden control	Pending testing	Not Run	Pending
-TC05	Low contrast (optional)	Pending testing	Not Run	Pending
-
+| Test ID | Defect | Actual Result | Status | Evidence |
+|---|---|---|---|---|
+| TC01 | Horizontal overflow | Reproduced on mobile (390 × 844); document width was 920 px | Manual reproduction confirmed; scanner/vision verification pending | eval/cases_data/horizontal_overflow/screenshot.png |
+| TC02 | Off-screen button | Broken page: button outside viewport; fixed page: button inside viewport, as recorded in detailed results | Manual test documented; automated verification pending | eval/cases_data/offscreen_button/screenshot.png |
+| TC03 | Overlapping text | Evidence files exist; confirm detailed test result | Pending confirmation | eval/cases_data/overlapping_text/screenshot.png |
+| TC04 | Hidden control | Not yet confirmed | Pending | Pending |
+| TC05 | Low contrast (optional) | Not yet confirmed | Pending | Pending |
 Notes
 
 Record the browser, viewport dimensions, observations, and screenshot evidence when each test is performed.
 
 Summary
+Testing has been documented for the horizontal overflow and off-screen button cases. Evidence files are available for the tested cases. Overlapping text, hidden control, and optional low-contrast results require confirmation. Automated scanner and vision verification remain pending until their results are checked.
 
-Testing has not yet been performed. Results will be updated after executing the test cases.
-QA Documentation Update
 
 * Test matrix documented in test_matrix.md.
 * Test results checklist documented in test_results.md.
-* Manual horizontal scrolling check completed for OS-105. other test cases and backend verification remain pending.g
-* Screenshots will be recorded after testing.
-QA Documentation Update
+* Manual horizontal overflow check documented for OS-105; scanner and vision verification remain pending.
+* Screenshots and metrics are stored under eval/cases_data/ for the documented cases.
 
 ### OS-105: Horizontal Scrolling at Mobile Viewport
 
