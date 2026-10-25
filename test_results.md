@@ -92,3 +92,4 @@ Horizontal Overflow — REPRODUCED
 * Evidence: Safari Developer Tools Console output.
 * Status: REPRODUCED
 * Notes: The page width exceeds the viewport width, confirming horizontal overflow at the tested mobile width.
+done
