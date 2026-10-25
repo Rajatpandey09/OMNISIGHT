@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f3f4f6">
+<title>OmniSight — Visual QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true">
+  <div class="scroll-progress-fill"></div></div>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#overview" data-page="overview" aria-label="OmniSight overview">
+      <span class="brand-mark"><i></i></span><span><b>OmniSight</b><small>Visual QA workspace</small></span>
+    </a>
+    <div class="workspace-label">WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      <button class="nav-link active" data-page="overview"><span class="nav-icon">⌂</span>Overview</button>
+      <button class="nav-link" data-page="scan"><span class="nav-icon">⊕</span>New scan</button>
+      <button class="nav-link" data-page="issues"><span class="nav-icon">◇</span>Issues <span class="nav-count" id="navIssueCount">—</span></button>
+      <button class="nav-link" data-page="history"><span class="nav-icon">◷</span>Scan history</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="privacy-card"><span class="privacy-icon">◈</span><b>Human-led quality</b><p>Review every proposed change. Verify before closing an issue.</p><div class="privacy-rule"><i></i></div></div>
+      <div class="profile"><span class="avatar">OS</span><span><b>OmniSight</b><small>Frontend workspace</small></span><button id="themeToggle" class="theme-mini" aria-label="Toggle appearance">◐</button></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button
+        class="mobile-menu"
+        id="mobileMenu"
+        aria-label="Open navigation"
+        aria-controls="sidebar"
+        aria-expanded="false"
+      >☰</button>
+      <div class="breadcrumbs"><span>Workspace</span><i>/</i><b id="breadcrumb">Overview</b></div>
+      <div class="top-actions">
+        <label class="searchbox"><span>⌕</span><input id="globalSearch" type="search" placeholder="Search issues" aria-label="Search issues and scans"></label>
+        <button class="icon-button" id="refreshButton" aria-label="Refresh dashboard" title="Refresh data">↻</button>
+      </div>
+    </header>
+
+    <section class="page active" id="page-overview">
+      <div class="page-heading"><div><span class="eyebrow">QUALITY AT A GLANCE</span><h1>A clearer view of <em>what needs fixing.</em></h1><p>Track scan activity, inspect visual defects, and keep every fix accountable.</p></div><button class="button button-dark" data-page="scan">Start a scan <span>↗</span></button></div>
+      <div class="state-panel" id="dashboardState" aria-live="polite" hidden></div>
+      <section class="metric-grid" id="metricGrid" aria-label="Dashboard metrics">
+        <article class="metric-card"><div class="metric-top"><span class="metric-icon icon-indigo">▱</span><span class="metric-label">SCAN ACTIVITY</span></div><strong id="metricScans">—</strong><p>Total scans</p><div class="metric-foot">All recorded runs</div></article>
+        <article class="metric-card"><div class="metric-top"><span class="metric-icon icon-coral">◇</span><span class="metric-label">ISSUE REGISTER</span></div><strong id="metricIssues">—</strong><p>Issues found</p><div class="metric-foot">Across available scans</div></article>
+        <article class="metric-card"><div class="metric-top"><span class="metric-icon icon-mint">✓</span><span class="metric-label">VERIFICATION</span></div><strong id="metricVerified">—</strong><p>Verified resolved</p><div class="metric-foot">Confirmed by follow-up scan</div></article>
+        <article class="metric-card"><div class="metric-top"><span class="metric-icon icon-amber">◷</span><span class="metric-label">OPEN WORK</span></div><strong id="metricAttention">—</strong><p>Need attention</p><div class="metric-foot">Not yet verified</div></article>
+      </section>
+      <div class="dashboard-grid">
+        <section class="surface recent-surface"><div class="section-heading"><div><span class="eyebrow">LATEST ACTIVITY</span><h2>Recent scans</h2></div><button class="text-link" data-page="history">Full history ↗</button></div><div class="table-wrap"><table><thead><tr><th>Target</th><th>Run</th><th>Viewports</th><th>Status</th><th>Issues</th></tr></thead><tbody id="recentScans"></tbody></table></div><div class="empty-state" id="recentEmpty" hidden>No scan runs to show yet. Start a scan to populate this view.</div></section>
+        <section class="surface status-surface"><div class="section-heading"><div><span class="eyebrow">WORK IN PROGRESS</span><h2>Issue status</h2></div><span class="mini-label">Current register</span></div><div id="statusBreakdown" class="status-breakdown"></div><div class="status-legend" id="statusLegend"></div><div class="section-divider"></div><div class="section-heading compact"><div><span class="eyebrow">PRIORITY REVIEW</span><h2>Needs attention</h2></div><button class="text-link" data-page="issues">All issues ↗</button></div><div id="priorityIssues"></div><div class="empty-state" id="priorityEmpty" hidden>No outstanding issues.</div></section>
+      </div>
+    </section>
+
+    <section class="page" id="page-scan">
+      <div class="page-heading"><div><span class="eyebrow">SCAN CONFIGURATION</span><h1>Run a <em>careful check.</em></h1><p>Choose a target and the viewport sizes to inspect.</p></div></div>
+      <div class="scan-layout">
+        <form class="surface scan-form" id="scanForm">
+          <div class="form-step"><span>01</span><div><h2>Choose a target</h2><p>Select a configured target from your backend.</p></div></div>
+          <label class="field-label" for="target">Target website</label><select id="target" required><option value="">Loading configured targets…</option></select><p class="field-help" id="targetHelp">Targets are loaded from the connected backend in live mode.</p>
+          <div class="form-step step-spaced"><span>02</span><div><h2>Choose viewports</h2><p>Check at least one viewport for this run.</p></div></div>
+          <div class="viewport-options"><label class="viewport-option"><input type="checkbox" id="desktopViewport" checked><span class="viewport-art desktop-art">▱</span><span><b>Desktop</b><small>1366 × 768</small></span><span class="checkmark">✓</span></label><label class="viewport-option"><input type="checkbox" id="mobileViewport" checked><span class="viewport-art mobile-art">▯</span><span><b>Mobile</b><small>390 × 844</small></span><span class="checkmark">✓</span></label></div>
+          <div class="notice"><span>ⓘ</span><p>Suggested fixes are not considered resolved until a follow-up scan confirms the outcome.</p></div>
+          <button class="button button-dark button-full" id="runScanButton" type="submit">Run scan <span>↗</span></button><div class="form-feedback" id="scanFeedback" role="status"></div>
+        </form>
+        <aside class="surface scan-aside"><div class="aside-illustration"><div class="aside-orbit"></div><div class="aside-screen"><span></span><span></span><span></span><i></i></div><div class="aside-check">✓</div></div><span class="eyebrow">THE REVIEW LOOP</span><h2>Evidence before assumptions.</h2><ol class="workflow"><li><span>1</span><div><b>Capture</b><small>Collect viewport evidence.</small></div></li><li><span>2</span><div><b>Inspect</b><small>Review issue details and severity.</small></div></li><li><span>3</span><div><b>Approve</b><small>Human review of suggested CSS.</small></div></li><li><span>4</span><div><b>Verify</b><small>Confirm with a second scan.</small></div></li></ol><div class="aside-foot" id="scanModeFoot">Demo mode — no network request is made.</div></aside>
+      </div>
+    </section>
+
+    <section class="page" id="page-issues">
+      <div class="page-heading"><div><span class="eyebrow">FINDINGS REGISTER</span><h1>Issues, <em>in focus.</em></h1><p>Inspect evidence, severity, viewport and verification state.</p></div><div class="heading-tools"><select id="statusFilter" aria-label="Filter issues by status"><option value="all">All states</option><option value="detected">Detected</option><option value="proposed">Proposed</option><option value="applied">Applied</option><option value="verified">Verified</option><option value="failed">Failed</option><option value="inconclusive">Inconclusive</option></select></div></div>
+      <div class="filter-summary"><span id="issueSummary">—</span><span class="state-key"><i class="key-dot detected"></i>Detected <i class="key-dot proposed"></i>Proposed <i class="key-dot applied"></i>Applied <i class="key-dot verified"></i>Verified <i class="key-dot failed"></i>Failed <i class="key-dot inconclusive"></i>Inconclusive</span></div>
+      <div class="surface issue-list" id="issueList"></div><div class="state-panel" id="issuesState" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="page" id="page-history">
+      <div class="page-heading"><div><span class="eyebrow">SCAN ARCHIVE</span><h1>Every run, <em>accounted for.</em></h1><p>Inspect scan history and the latest available outcomes.</p></div><button class="button button-dark" data-page="scan">New scan <span>↗</span></button></div>
+      <div class="surface history-surface"><div class="table-wrap"><table><thead><tr><th>Scan ID</th><th>Target</th><th>Started</th><th>Viewports</th><th>Result</th><th>Issues</th></tr></thead><tbody id="historyRows"></tbody></table></div><div class="empty-state" id="historyEmpty" hidden>No scan history yet.</div><div class="state-panel" id="historyState" hidden></div></div>
+    </section>
+
+    <section class="page" id="page-review">
+      <div class="page-heading"><div><span class="eyebrow">HUMAN-IN-THE-LOOP</span><h1>Review the <em>proposed fix.</em></h1><p>Compare evidence, inspect the suggested CSS, and decide whether to approve.</p></div><button class="button button-light" id="backToIssues">← Back to issues</button></div>
+      <div id="reviewState" class="state-panel" hidden></div>
+      <div class="review-grid" id="reviewContent"></div>
+    </section>
+    <footer class="app-footer"><span>OmniSight <i>·</i> Visual QA, with a human in control.</span><span id="footerMode">LIVE API</span></footer>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="api.js"></script>
+<script src="script.js"></script>
+<script>
+(() => {
+const bar = document.getElementById("scrollProgress");
+const update = () => {
+  const root = document.documentElement;
+  const max = root.scrollHeight - root.clientHeight;
+  bar.style.transform = `scaleX(${max > 0 ? root.scrollTop / max : 0})`;
+};
+window.addEventListener("scroll", update, { passive: true });
+window.addEventListener("resize", update);
+update();
+})();
+</script>
+</body>
+</html>
