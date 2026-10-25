@@ -5249,3 +5249,103 @@ html body #metricGrid.is-loading .metric-card::after {
     animation: none;
   }
 }
+
+/* Mobile search bar — match the dark dashboard */
+@media (max-width: 700px) {
+  .topbar .top-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .topbar .searchbox {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    height: 42px;
+    padding: 0 12px;
+    background: #191919 !important;
+    border: 1px solid #303030;
+    border-radius: 13px;
+    box-shadow: none;
+  }
+
+  .topbar .searchbox input,
+  .topbar .searchbox input:focus {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    background: transparent !important;
+    color: #d5d9e5 !important;
+    -webkit-text-fill-color: #d5d9e5;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: 14px;
+  }
+
+  .topbar .searchbox input::placeholder {
+    color: #8d9bb3 !important;
+    opacity: 1;
+    -webkit-text-fill-color: #8d9bb3;
+  }
+
+  .topbar .searchbox > span {
+    color: #8d9bb3;
+  }
+
+  .topbar #refreshButton {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    background: #191919;
+    border: 1px solid #303030;
+    border-radius: 13px;
+    color: #a8c4e8;
+    box-shadow: none;
+  }
+}
+
+/* Force-remove search bar purple focus glow */
+.topbar .searchbox,
+.topbar .searchbox:hover,
+.topbar .searchbox:focus-within {
+  border-color: #303030 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.topbar .searchbox input,
+.topbar .searchbox input:focus,
+.topbar .searchbox input:focus-visible {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Dashboard metric card hover polish */
+.metric-card {
+  transition: transform 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metric-card {
+    transition: none;
+  }
+
+  .metric-card:hover {
+    transform: none;
+  }
+}
