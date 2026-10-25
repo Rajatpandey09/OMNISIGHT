@@ -1,1 +1,18 @@
-.DS_STORE
+.DS_Store
+
+# Python environments and cache
+.venv/
+.venv312/
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Generated artifacts
+artifacts/
+backend/artifacts/
+backend/scan_records.json
