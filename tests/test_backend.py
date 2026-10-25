@@ -20,4 +20,5 @@ def test_scan_ssrf_protection():
         "scan_id": "test-ssrf-001"
     })
     assert response.status_code == 400
-    assert "not is not permitted" in response.json()["detail"] or "SSRF" in response.json()["detail"]
+    detail = response.json()["detail"].lower()
+    assert "not permitted" in detail or "ssrf" in detail
