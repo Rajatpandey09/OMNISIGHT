@@ -12,7 +12,12 @@ def extract_json(text: str) -> dict:
     fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
     if fence:
         text = fence.group(1).strip()
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # repair one common slip: trailing commas before } or ]
+        repaired = re.sub(r",\s*([}\]])", r"\1", text)
+        return json.loads(repaired)
 
 
 def analyze(provider: VisionProvider, scan_id: str, viewport: str,
