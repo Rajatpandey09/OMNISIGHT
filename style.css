@@ -5363,3 +5363,53 @@ textarea::placeholder {
 button {
     -webkit-tap-highlight-color: transparent;
 }
+/* Subtle UI polish and responsive improvements */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+input,
+select,
+textarea {
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    img {
+        object-fit: contain;
+    }
+
+    button {
+        max-width: 100%;
+    }
+
+    pre,
+    code {
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    button,
+    a,
+    input,
+    select,
+    textarea {
+        transition: none;
+    }
+}
