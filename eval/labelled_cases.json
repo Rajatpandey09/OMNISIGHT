@@ -28,39 +28,4 @@
     {"case_id": "clean_desktop", "page": "clean.html", "viewport": "desktop",
      "expected": [], "expected_signal": "no defects; tests false positives"}
   ]
-  {
-  "cases": [
-    {
-      "case_id": "horizontal_overflow",
-      "file": "bug_overflow.html",
-      "expected_defect": "Horizontal overflow",
-      "expected_signal": "Content width exceeds viewport width and creates horizontal scrolling"
-    },
-    {
-      "case_id": "offscreen_button",
-      "file": "bug_offscreen_button.html",
-      "expected_defect": "Off-screen button",
-      "expected_signal": "Target button lies outside the visible viewport"
-    },
-    {
-      "case_id": "overlapping_text",
-      "file": "bug_overlapping_text.html",
-      "expected_defect": "Overlapping text",
-      "expected_signal": "Two or more text elements overlap"
-    },
-    {
-      "case_id": "hidden_control",
-      "file": "bug_hidden_control.html",
-      "expected_defect": "Hidden control",
-      "expected_signal": "Expected interactive control is not visible"
-    },
-    {
-      "case_id": "contrast_issue",
-      "file": "bug_contrast.html",
-      "expected_defect": "Low contrast",
-      "expected_signal": "Text contrast ratio is below the chosen WCAG threshold",
-      "optional": true
-    }
-  ]
-}
 }
