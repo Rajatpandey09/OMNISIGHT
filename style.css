@@ -5413,3 +5413,90 @@ textarea {
         transition: none;
     }
 }
+
+/* UI Polish: Interaction and Accessibility */
+html {
+  scroll-behavior: smooth;
+}
+
+button,
+a,
+.card,
+.stat-card,
+.issue-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+              border-color 0.2s ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent, #60a5fa);
+  outline-offset: 3px;
+}
+
+.card:hover,
+.stat-card:hover,
+.issue-card:hover {
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+::selection {
+  background: rgba(96, 165, 250, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dashboard Polish: Glass Effects and Scrollbar */
+.card,
+.stat-card,
+.issue-card {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.card:hover,
+.stat-card:hover,
+.issue-card:hover {
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+@media (max-width: 768px) {
+  .card,
+  .stat-card,
+  .issue-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
