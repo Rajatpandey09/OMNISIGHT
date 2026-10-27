@@ -12,10 +12,15 @@ def extract_json(text: str) -> dict:
     fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
     if fence:
         text = fence.group(1).strip()
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # repair one common slip: trailing commas before } or ]
+        repaired = re.sub(r",\s*([}\]])", r"\1", text)
+        return json.loads(repaired)
 
 
-def analyze(provider: VisionProvider, scan_id: str, viewport: str,
+def _analyze_once(provider: VisionProvider, scan_id: str, viewport: str,
             width: int, height: int, image_png: bytes,
             metrics: dict | None = None, timeout: float = 30.0,
             html: str | None = None) -> AnalysisResult:
@@ -40,3 +45,13 @@ def analyze(provider: VisionProvider, scan_id: str, viewport: str,
                 for f in out.findings]
     return AnalysisResult(**base(), outcome="ok", findings=findings,
                           cannot_determine=out.cannot_determine)
+
+
+def analyze(*args, retries: int = 1, **kwargs) -> AnalysisResult:
+    """Call once; if the reply was unusable (invalid_output), try again up to `retries` times."""
+    result = _analyze_once(*args, **kwargs)
+    for _ in range(retries):
+        if result.outcome != "invalid_output":
+            break
+        result = _analyze_once(*args, **kwargs)
+    return result

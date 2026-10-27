@@ -8,6 +8,7 @@ Rules:
 - If you cannot determine whether a defect exists, set cannot_determine=true
   or give status "inconclusive" with low confidence. Do not guess.
 - bbox is optional: an approximate region as fractions (0-1) of the screenshot; omit it if unsure.
+- A button or form control cut off by the screen edge is offscreen_button; a wide table, banner or text running past the edge is horizontal_overflow. This only concerns those two labels: still check every other issue type, including low_contrast and overlapping_text.
 - Be cautious: suggest the smallest CSS change; never output code to execute.
 - Reply with ONLY a JSON object matching this shape:
 {"findings":[{"issue_type":"horizontal_overflow|offscreen_button|overlapping_text|hidden_control|low_contrast|other",

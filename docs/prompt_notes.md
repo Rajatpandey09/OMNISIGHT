@@ -19,3 +19,4 @@ Prompts live in vision/prompts.py. Design rules taken from the work guide:
 | Version | Change | Result on labelled cases |
 |---|---|---|
 | v1 | Initial system prompt | not yet tested |
+| v2 | Page text and HTML treated as untrusted; optional cleaned HTML; screenshot-only mode | not yet tested |
