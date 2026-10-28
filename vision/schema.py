@@ -43,6 +43,7 @@ class ModelOutput(BaseModel):
 class Finding(ModelFinding):
     scan_id: str
     viewport: Viewport
+    id: Optional[str] = None       # stable id, e.g. "scan-001:mobile:1"
 
 
 Outcome = Literal["ok", "no_credentials", "provider_error", "invalid_output", "input_error"]
@@ -56,14 +57,19 @@ class AnalysisResult(BaseModel):
     findings: list[Finding] = []
     cannot_determine: bool = False
     error: Optional[str] = None
+    json_repaired: bool = False    # True if the model's JSON needed trailing commas removed
 
 
 class PatchProposal(BaseModel):
     """Reviewable only. Never executed by this module."""
     scan_id: str
+    finding_id: Optional[str] = None
     file_path: str
     selector: str
     diff: str                      # unified diff text
+    css_rule: Optional[str] = None  # the rule alone, for injection into a COPY of the page
     rationale: str
     expected_outcome: str
+    verification_check: Optional[dict] = None   # machine-checkable, see vision/verify.py
+    source: Literal["template", "model"] = "template"
     status: Literal["fix_proposed"] = "fix_proposed"
