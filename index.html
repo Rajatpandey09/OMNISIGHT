@@ -114,3 +114,27 @@ update();
 </script>
 </body>
 </html>
+
+<div class="live-clock">
+    <span class="live-clock-dot"></span>
+    <time id="liveDateTime">Loading time...</time>
+</div>
+
+<script>
+    function updateLiveDateTime() {
+        const element = document.getElementById("liveDateTime");
+        if (!element) return;
+
+        const now = new Date();
+
+        element.dateTime = now.toISOString();
+        element.textContent = new Intl.DateTimeFormat("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "medium",
+            hour12: true
+        }).format(now);
+    }
+
+    updateLiveDateTime();
+    setInterval(updateLiveDateTime, 1000);
+</script>

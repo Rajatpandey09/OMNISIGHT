@@ -5500,3 +5500,51 @@ button:active {
     -webkit-backdrop-filter: none;
   }
 }
+/* Refined dashboard section separation */
+.dashboard-section {
+    position: relative;
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.dashboard-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+/* Compact QA status indicators */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.status-indicator::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.live-clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.live-clock-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+    flex-shrink: 0;
+}
