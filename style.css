@@ -5548,3 +5548,19 @@ button:active {
     box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
     flex-shrink: 0;
 }
+.search-shortcut-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.search-shortcut-hint kbd {
+  padding: 3px 7px;
+  border: 1px solid var(--border-color, rgba(255,255,255,.15));
+  border-radius: 5px;
+  font: inherit;
+  font-weight: 600;
+}

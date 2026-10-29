@@ -435,3 +435,22 @@ document.addEventListener("keydown", e => {
 });
 loadData();
 })();
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "/") return;
+
+  const target = event.target;
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target.isContentEditable
+  ) return;
+
+  const search = document.querySelector(
+    'input[type="search"], input[placeholder*="Search" i]'
+  );
+
+  if (search) {
+    event.preventDefault();
+    search.focus();
+  }
+});
