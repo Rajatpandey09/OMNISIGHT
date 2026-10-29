@@ -1,5 +1,5 @@
 # OMNISIGHT
-<<<<<<< HEAD
+
 ## Vision module (Member 3)
 
 Interprets scan screenshots and page metrics and returns structured, validated findings.
@@ -46,7 +46,7 @@ confidence and a `detected` or `inconclusive` status. Uncertainty is never repor
 - Cloud providers are not implemented. The interface in `vision/providers/base.py`
   allows adding one with a single new file.
 - Patch (diff) suggestions are not built yet.
-=======
+
 
 # OmniSight Backend & Browser Automation
 
@@ -57,4 +57,4 @@ Backend service built with **FastAPI**, **Uvicorn**, and **Playwright** for head
 1. Install Python dependencies:
    ```bash
    pip install -r requirements.txt
->>>>>>> 659b091b162f0f44f259aeb51d74da8aa2f6d19f
+
