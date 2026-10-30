@@ -5564,3 +5564,41 @@ button:active {
   font: inherit;
   font-weight: 600;
 }
+/* Back To Top Button */
+
+.back-to-top {
+    position: fixed;
+    bottom: 25px;
+    left: 24px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--border-color, #30394b);
+    border-radius: 12px;
+    background: var(--card-bg, #151a27);
+    color: inherit;
+    font-size: 22px;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+    z-index: 998;
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    border-color: #38bdf8;
+    transform: translateY(-3px);
+}
+
+@media (max-width: 600px) {
+    .back-to-top {
+        left: 12px;
+        bottom: 12px;
+    }
+}

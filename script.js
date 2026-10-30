@@ -454,3 +454,24 @@ document.addEventListener("keydown", (event) => {
     search.focus();
   }
 });
+// Back To Top Functionality
+
+(() => {
+    const button = document.getElementById("backToTop");
+
+    if (!button) return;
+
+    window.addEventListener("scroll", () => {
+        button.classList.toggle(
+            "visible",
+            window.scrollY > 300
+        );
+    }, { passive: true });
+
+    button.addEventListener("click", () => {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    });
+})();
