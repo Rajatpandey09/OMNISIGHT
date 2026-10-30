@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+from typing import List, Optional
 from fastapi import FastAPI, Request, HTTPException, status
 from pydantic import BaseModel
 from playwright.async_api import async_playwright
@@ -25,9 +26,13 @@ os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 ALLOWED_DOMAINS = ["localhost", "127.0.0.1", "example.com"]
 
+# In-memory scan history store for tracking and tests
+SCAN_HISTORY_STORE = []
+
 class ScanRequest(BaseModel):
     url: str
-    scan_id: str
+    scan_id: Optional[str] = "default_scan"
+    viewports: Optional[List[str]] = ["desktop", "mobile"]
 
 async def navigate_with_retry(page, url, retries=3, delay=2):
     """Attempt to navigate to a target URL with exponential backoff to handle network flakiness."""
@@ -46,7 +51,6 @@ async def add_process_time_header(request: Request, call_next):
     request_id = str(uuid.uuid4())
     start_time = asyncio.get_event_loop().time()
     
-    # Pass request_id through headers
     response = await call_next(request)
     
     process_time = asyncio.get_event_loop().time() - start_time
@@ -68,6 +72,11 @@ def read_root():
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["System"])
 def health_check():
     return {"status": "healthy", "service": "OmniSight Backend"}
+
+@app.get("/api/scans", status_code=status.HTTP_200_OK, tags=["Scans"])
+def get_scan_history():
+    """Retrieve history of executed browser scans."""
+    return {"scans": SCAN_HISTORY_STORE, "total": len(SCAN_HISTORY_STORE)}
 
 @app.get("/api/artifacts", status_code=status.HTTP_200_OK, tags=["Artifacts"])
 def list_artifacts():
@@ -108,8 +117,9 @@ async def execute_browser_scan(payload: ScanRequest):
             detail="Target URL is not permitted by security policies (SSRF protection)."
         )
     
-    desktop_screenshot_filename = f"{payload.scan_id}_desktop.png"
-    mobile_screenshot_filename = f"{payload.scan_id}_mobile.png"
+    scan_identifier = payload.scan_id or str(uuid.uuid4())[:8]
+    desktop_screenshot_filename = f"{scan_identifier}_desktop.png"
+    mobile_screenshot_filename = f"{scan_identifier}_mobile.png"
     
     desktop_screenshot_path = os.path.join(ARTIFACT_DIR, desktop_screenshot_filename)
     mobile_screenshot_path = os.path.join(ARTIFACT_DIR, mobile_screenshot_filename)
@@ -180,9 +190,8 @@ async def execute_browser_scan(payload: ScanRequest):
                 };
             }""")
 
-            # Formatted response matching teammate's expected schema
-            return {
-                "scan_id": payload.scan_id,
+            response_payload = {
+                "scan_id": scan_identifier,
                 "results": [
                     {
                         "viewport": "desktop",
@@ -200,6 +209,10 @@ async def execute_browser_scan(payload: ScanRequest):
                     }
                 ]
             }
+            
+            # Save to scan history store
+            SCAN_HISTORY_STORE.append(response_payload)
+            return response_payload
 
     except Exception as e:
         raise HTTPException(
