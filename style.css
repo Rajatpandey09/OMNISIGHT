@@ -5602,3 +5602,120 @@ button:active {
         bottom: 12px;
     }
 }
+/* ===== OMNISIGHT: POLISHED UI EXPERIENCE ===== */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #6366f1 transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #818cf8, #6366f1);
+    border-radius: 20px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #a5b4fc;
+}
+
+.loading,
+.skeleton {
+    animation: omniPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes omniPulse {
+    0%, 100% {
+        opacity: 0.55;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+/* ===== OMNISIGHT: STATUS & SEVERITY ENHANCEMENT ===== */
+
+.status-badge,
+.severity-badge,
+.scan-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+}
+
+.status-badge:hover,
+.severity-badge:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+}
+
+.severity-critical {
+    background: rgba(239, 68, 68, 0.14);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.severity-high {
+    background: rgba(249, 115, 22, 0.14);
+    color: #fb923c;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.severity-medium {
+    background: rgba(234, 179, 8, 0.14);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.severity-low {
+    background: rgba(34, 197, 94, 0.14);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-verified {
+    color: #4ade80;
+    background: rgba(34, 197, 94, 0.12);
+}
+
+.status-pending {
+    color: #facc15;
+    background: rgba(234, 179, 8, 0.12);
+}
+
+.status-failed {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+@media (max-width: 600px) {
+    .status-badge,
+    .severity-badge,
+    .scan-status {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+}
