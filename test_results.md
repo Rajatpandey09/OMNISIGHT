@@ -93,3 +93,27 @@ Horizontal Overflow — REPRODUCED
 * Status: REPRODUCED
 * Notes: The page width exceeds the viewport width, confirming horizontal overflow at the tested mobile width.
 done
+## QA Verification Summary
+
+### Mobile Viewport Testing
+
+- Viewport size: 390 × 844 px
+- Horizontal overflow: Reproduced
+- Hidden control: Reproduced
+- Evidence location: eval/evidence/
+
+### Verification Rules
+
+1. Run the scan before applying a fix.
+2. Record the detected UI defect.
+3. Apply the approved CSS fix.
+4. Run the scan again.
+5. Compare before and after screenshots.
+6. Mark the issue as verified only if the original defect is resolved.
+7. Record verification failures separately.
+
+### QA Status
+
+- Reproduced: Defect successfully observed.
+- Pending: Fix verification.
+- Verified: Awaiting successful follow-up scan.
