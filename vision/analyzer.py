@@ -30,10 +30,10 @@ def parse_model_json(raw: str):
         return json.loads(_strip_trailing_commas(_unfence(raw))), True
 
 
-def analyze(provider: VisionProvider, scan_id: str, viewport: str,
-            width: int, height: int, image_png: bytes,
-            metrics: dict | None = None, timeout: float = 30.0,
-            html: str | None = None) -> AnalysisResult:
+def _analyze_once(provider: VisionProvider, scan_id: str, viewport: str,
+                  width: int, height: int, image_png: bytes,
+                  metrics: dict | None = None, timeout: float = 30.0,
+                  html: str | None = None) -> AnalysisResult:
     def base():  # evaluated after the call: a fallback chain may switch providers
         return dict(scan_id=scan_id, viewport=viewport, provider=provider.name)
 
@@ -50,7 +50,7 @@ def analyze(provider: VisionProvider, scan_id: str, viewport: str,
     try:
         data, repaired = parse_model_json(raw)
         out = ModelOutput.model_validate(data)
-    except (json.JSONDecodeError, ValidationError, TypeError) as e:
+    except (json.JSONDecodeError, ValidationError, TypeError, AttributeError) as e:
         return AnalysisResult(**base(), outcome="invalid_output",
                               error=f"{type(e).__name__}: {str(e)[:200]} | raw starts: {str(raw)[:300]!r}")
     findings = [Finding(**f.model_dump(), scan_id=scan_id, viewport=viewport,
@@ -58,3 +58,13 @@ def analyze(provider: VisionProvider, scan_id: str, viewport: str,
                 for i, f in enumerate(out.findings, 1)]
     return AnalysisResult(**base(), outcome="ok", findings=findings,
                           cannot_determine=out.cannot_determine, json_repaired=repaired)
+
+
+def analyze(*args, retries: int = 1, **kwargs) -> AnalysisResult:
+    """Call once; if the reply was unusable (invalid_output), try again up to `retries` times."""
+    result = _analyze_once(*args, **kwargs)
+    for _ in range(retries):
+        if result.outcome != "invalid_output":
+            break
+        result = _analyze_once(*args, **kwargs)
+    return result
