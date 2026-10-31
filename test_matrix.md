@@ -99,3 +99,23 @@ Proposed Fix Verification
 * Verify the layout again at the same viewport size after the fix.
 * Record the actual result and supporting evidence.
 * Mark the issue as verified only after successful follow-up testing. 
+## 10. QA Test Execution Checklist
+
+### Pre-Testing Checks
+- [ ] Confirm the correct test page is available.
+- [ ] Check desktop viewport (1366 × 768).
+- [ ] Check mobile viewport (390 × 844).
+- [ ] Confirm the expected UI defect.
+
+### Test Execution
+- [ ] Run the automated scan.
+- [ ] Capture desktop and mobile screenshots.
+- [ ] Record detected defects.
+- [ ] Compare actual results with expected results.
+- [ ] Check for false positives and false negatives.
+
+### Post-Testing Checks
+- [ ] Save screenshots in eval/evidence/.
+- [ ] Record test results and defect labels.
+- [ ] Report failed or inconclusive tests.
+- [ ] Verify fixes using a second scan.
