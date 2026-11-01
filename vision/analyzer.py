@@ -14,7 +14,11 @@ def _unfence(text: str) -> str:
 
 
 def extract_json(text: str) -> dict:
-    return json.loads(_unfence(text))
+    unfenced = _unfence(text)
+    try:
+        return json.loads(unfenced)
+    except json.JSONDecodeError:
+        return json.loads(_strip_trailing_commas(unfenced))
 
 
 def _strip_trailing_commas(text: str) -> str:
@@ -25,15 +29,15 @@ def parse_model_json(raw: str):
     """Strict parse first. If that fails, retry after removing trailing commas (a common
     small-model slip). Returns (data, repaired). Anything still broken raises."""
     try:
-        return extract_json(raw), False
+        return json.loads(_unfence(raw)), False
     except json.JSONDecodeError:
         return json.loads(_strip_trailing_commas(_unfence(raw))), True
 
 
-def analyze(provider: VisionProvider, scan_id: str, viewport: str,
-            width: int, height: int, image_png: bytes,
-            metrics: dict | None = None, timeout: float = 30.0,
-            html: str | None = None) -> AnalysisResult:
+def _analyze_once(provider: VisionProvider, scan_id: str, viewport: str,
+                  width: int, height: int, image_png: bytes,
+                  metrics: dict | None = None, timeout: float = 30.0,
+                  html: str | None = None) -> AnalysisResult:
     def base():  # evaluated after the call: a fallback chain may switch providers
         return dict(scan_id=scan_id, viewport=viewport, provider=provider.name)
 
@@ -58,3 +62,13 @@ def analyze(provider: VisionProvider, scan_id: str, viewport: str,
                 for i, f in enumerate(out.findings, 1)]
     return AnalysisResult(**base(), outcome="ok", findings=findings,
                           cannot_determine=out.cannot_determine, json_repaired=repaired)
+
+
+def analyze(*args, retries: int = 1, **kwargs) -> AnalysisResult:
+    """Call once; if the reply was unusable (invalid_output), try again up to `retries` times."""
+    result = _analyze_once(*args, **kwargs)
+    for _ in range(retries):
+        if result.outcome != "invalid_output":
+            break
+        result = _analyze_once(*args, **kwargs)
+    return result
