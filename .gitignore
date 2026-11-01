@@ -12,3 +12,7 @@ backend/scan_records.json
 __pycache__/
 *.pyc
 artifacts/
+*.db
+*.sqlite
+*.sqlite3
+
