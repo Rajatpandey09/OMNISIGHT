@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniSight — Mid-Project Review Presentation</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --cyan: #38bdf8;
+      --indigo: #818cf8;
+      --green: #34d399;
+      --orange: #fb923c;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --sub: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Presentation Frame (16:9 ratio) */
+    .deck-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem 3rem;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      flex-direction: column;
+      justify-content: flex-start;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.985); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Header elements */
+    .badge {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      margin-bottom: 0.4rem;
+    }
+
+    .slide-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .slide-subtitle {
+      font-size: 1.05rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+      line-height: 1.4;
+    }
+
+    /* Grid Layouts */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      flex: 1;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      flex: 1;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+    }
+
+    .card h3.cyan { color: var(--cyan); }
+    .card h3.green { color: var(--green); }
+    .card h3.indigo { color: var(--indigo); }
+    .card h3.orange { color: var(--orange); }
+
+    .card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .card ul li {
+      font-size: 0.95rem;
+      color: var(--sub);
+      line-height: 1.45;
+      position: relative;
+      padding-left: 1.2rem;
+    }
+
+    .card ul li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    /* Stat Cards */
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    /* Title Slide Specifics */
+    .hero-slide {
+      justify-content: center;
+      padding: 4rem;
+    }
+
+    .hero-slide h1 {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-slide h2 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--indigo);
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-slide p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-meta {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1.6rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Navigation Bar */
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 2rem;
+      background: #070d18;
+      border-top: 1px solid var(--border);
+    }
+
+    .nav-btn {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      background: #334155;
+      border-color: var(--cyan);
+    }
+
+    .nav-counter {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .keys-hint {
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    @media print {
+      body { height: auto; overflow: visible; background: white; color: black; }
+      .nav-bar { display: none; }
+      .deck-container { padding: 0; display: block; }
+      .slide { display: flex !important; page-break-after: always; max-width: 100%; border: none; box-shadow: none; aspect-ratio: auto; min-height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck-container">
+
+    <!-- SLIDE 1: Title -->
+    <div class="slide hero-slide active" data-slide="1">
+      <span class="badge">Infotact Solutions  |  Mid-Project Review</span>
+      <h1>OmniSight</h1>
+      <h2>Multimodal UI Self-Healing & Autonomous RPA Agent</h2>
+      <p>Continuous Cross-Viewport UI Auditing • Headless Playwright Automation • Closed-Loop CSS Verification</p>
+      <div class="hero-meta">
+        <div>
+          <b style="color: var(--text); font-size: 1.05rem;">Presenter: Priyanshu Singh</b>
+          <div style="color: var(--muted); font-size: 0.9rem;">Backend & Browser Automation Engineer</div>
+        </div>
+        <div style="text-align: right; color: var(--muted); font-size: 0.85rem;">
+          <div>Repo: <b>Rajatpandey09/OMNISIGHT</b></div>
+          <div>Milestone: Phase 1 & 2 Complete (54/54 Tests Green)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: Problem Statement -->
+    <div class="slide" data-slide="2">
+      <span class="badge">Problem Statement & Industry Context</span>
+      <h2 class="slide-title">Why Traditional UI Testing Breaks Down</h2>
+      <p class="slide-subtitle">Modern responsive web applications require visual reasoning that conventional test runners cannot deliver.</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3 class="orange">1. Brittle DOM Selectors</h3>
+          <ul>
+            <li>Selenium and Cypress depend entirely on hardcoded XPath, IDs, or CSS classes.</li>
+            <li>A single class rename or Tailwind CSS refactor breaks test suites immediately.</li>
+            <li>Engineers waste 30%+ of testing time constantly updating test scripts.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="cyan">2. Blind to Visual Bugs</h3>
+          <ul>
+            <li>Traditional frameworks only verify if an HTML tag exists in the DOM tree.</li>
+            <li>They completely miss buttons clipping off-screen on mobile viewports.</li>
+            <li>Horizontal scrollbar leaks, clipped text, and bad contrast pass undetected.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="indigo">3. Slow Manual Triage</h3>
+          <ul>
+            <li>When visual bugs occur, engineers spend hours reproducing them across devices.</li>
+            <li>Writing and reviewing simple CSS patches causes release bottlenecks.</li>
+            <li>Lack of automated re-testing leads to recurring visual regressions.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: OmniSight Solution -->
+    <div class="slide" data-slide="3">
+      <span class="badge">Architecture Overview</span>
+      <h2 class="slide-title">OmniSight: The Self-Healing Closed Loop</h2>
+      <p class="slide-subtitle">A 4-stage pipeline that automates inspection, diagnosis, repair, and live verification.</p>
+      <div class="grid-4">
+        <div class="card">
+          <h3 class="cyan">1. Capture & Measure</h3>
+          <ul>
+            <li>Automated Playwright browser controller.</li>
+            <li>Dual-viewport capture: Desktop (1366x768) and Mobile (390x844).</li>
+            <li>Deep DOM layout metrics (bounding boxes, horizontal overflow).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="indigo">2. Multimodal AI</h3>
+          <ul>
+            <li>Ingests compact viewport screenshots and DOM metrics.</li>
+            <li>Vision-Language Model (VLM) identifies visual layout defects.</li>
+            <li>Outputs validated, structured JSON schema with confidence scores.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="orange">3. Patch Generation</h3>
+          <ul>
+            <li>Synthesizes actionable CSS patches targeted to offending selectors.</li>
+            <li>Proposes safe styling rules (e.g. max-width, overflow-x).</li>
+            <li>Presents reviewable patch diffs in the QA dashboard.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="green">4. Live Rescan Verify</h3>
+          <ul>
+            <li>Injects proposed CSS patch into live browser session.</li>
+            <li>Re-captures DOM metrics & responsive screenshots.</li>
+            <li>Verifies defect resolution (verified_resolved) without regressions.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Team Responsibility Matrix -->
+    <div class="slide" data-slide="4">
+      <span class="badge">Team Collaboration Matrix</span>
+      <h2 class="slide-title">Clean Division of Labor (4-Member Team)</h2>
+      <p class="slide-subtitle">Adhering strictly to Infotact Solutions' Work Guide with clear module contracts.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="cyan">Member 1 | Frontend Developer</h3>
+          <ul>
+            <li>React QA Dashboard with real-time status updates.</li>
+            <li>Scan trigger interface, before/after visual diff viewer, and patch review.</li>
+            <li>Zero browser automation or AI secrets in client bundle.</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color: var(--green);">
+          <h3 class="green">Member 2 | Backend & Automation (Priyanshu)</h3>
+          <ul>
+            <li>FastAPI service, SQLite persistence, and BackgroundTasks worker queue.</li>
+            <li>Playwright Chromium headless scanner & DOM geometry metrics.</li>
+            <li>Resilient exponential backoff navigation & SSRF security guardrails.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="indigo">Member 3 | Vision AI / ML Engineer</h3>
+          <ul>
+            <li>Multimodal prompt engineering for spatial UI reasoning.</li>
+            <li>Screenshot-to-JSON parser with error fallback & recovery.</li>
+            <li>Generates reviewable CSS patch suggestions with confidence scores.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="orange">Member 4 | QA & Integration Engineer</h3>
+          <ul>
+            <li>Constructs reproducible defect benchmarks (overflows, off-screen buttons).</li>
+            <li>Validates scanner and VLM accuracy across labelled test matrix.</li>
+            <li>Verifies closed-loop self-healing and regression prevention.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Priyanshu's Role -->
+    <div class="slide" data-slide="5">
+      <span class="badge">Primary Focus: Member 2</span>
+      <h2 class="slide-title">Priyanshu's Role & Engineering Scope</h2>
+      <p class="slide-subtitle">Building the deterministic foundation, resilient browser automation, and asynchronous microservice.</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3 class="cyan">Deterministic Automation</h3>
+          <ul>
+            <li>Automated Playwright browser controller independent of AI availability.</li>
+            <li>Headless Chromium lifecycle management with safe try/finally cleanup.</li>
+            <li>Direct JavaScript injection for precise pixel and bounding box measurement.</li>
+            <li>Zero AI dependency for core layout metric capture.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="green">Production Backend</h3>
+          <ul>
+            <li>High-performance FastAPI service with clean modular architecture.</li>
+            <li>Asynchronous task queue offloading long-running browser executions.</li>
+            <li>Immediate 202 Accepted response with status polling endpoints.</li>
+            <li>SQLAlchemy ORM with SQLite persistent storage.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="indigo">Security & Observability</h3>
+          <ul>
+            <li>SSRF domain allowlisting preventing malicious external network access.</li>
+            <li>Middleware request tracing with unique X-Request-ID (UUID).</li>
+            <li>Execution timing with X-Process-Time performance headers.</li>
+            <li>Structured logging and artifact lifecycle management.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Playwright Deep Dive -->
+    <div class="slide" data-slide="6">
+      <span class="badge">Implementation Detail 1</span>
+      <h2 class="slide-title">Playwright Automation & DOM Metric Extraction</h2>
+      <p class="slide-subtitle">Extracting deep layout measurements that visual checks and unit tests cannot see.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="cyan">Simultaneous Dual-Viewport Capture</h3>
+          <ul>
+            <li><b>Desktop Viewport:</b> 1366 x 768 px (Standard 16:9 laptop display).</li>
+            <li><b>Mobile Viewport:</b> 390 x 844 px (Modern mobile phone display).</li>
+            <li>Automated full-page screenshot capture saved directly to artifacts directory.</li>
+            <li>Clean naming scheme: <code>{scan_id}_{viewport}.png</code> for instant retrieval.</li>
+            <li><b>Resilient Navigation:</b> <code>navigate_with_retry</code> with exponential backoff handles flaky networks.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="green">Deep DOM Geometry Extraction</h3>
+          <ul>
+            <li><b>Button Coordinates:</b> Queries <code>button</code>, <code>a.btn</code>, <code>input[type=submit]</code>.</li>
+            <li><b>Bounding Boxes:</b> Uses <code>getBoundingClientRect()</code> to extract x, y, width, height.</li>
+            <li><b>Off-Screen Detection:</b> Evaluates <code>rect.right > innerWidth || rect.left &lt; 0</code>.</li>
+            <li><b>Horizontal Overflow:</b> Detects <code>scrollWidth > clientWidth</code> across viewports.</li>
+            <li><b>Hidden Controls:</b> Discovers invisible controls (<code>[hidden]</code>, <code>display: none</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Async & SQLite -->
+    <div class="slide" data-slide="7">
+      <span class="badge">Implementation Detail 2</span>
+      <h2 class="slide-title">Asynchronous Processing & SQLite Persistence</h2>
+      <p class="slide-subtitle">Migrating from an in-memory prototype to an enterprise-grade persistent microservice.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="indigo">Asynchronous Task Processing</h3>
+          <ul>
+            <li><b>Problem:</b> Browser automation takes 3-10 seconds, causing gateway timeouts on sync HTTP calls.</li>
+            <li><b>Solution:</b> Offloaded <code>run_scan_worker</code> to FastAPI <code>BackgroundTasks</code>.</li>
+            <li><b>Immediate Response:</b> <code>POST /api/scan</code> creates a pending DB record and returns <b>202 Accepted</b>.</li>
+            <li><b>Status Polling:</b> <code>GET /api/scans/{scan_id}</code> provides real-time state: <code>pending</code> &rarr; <code>processing</code> &rarr; <code>completed</code>.</li>
+            <li>Eliminates server blocking and allows parallel queuing.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="green">SQLAlchemy ORM + SQLite Storage</h3>
+          <ul>
+            <li>Dedicated <code>database.py</code> module with clean <code>SessionLocal</code> transaction management.</li>
+            <li><b>ScanRecord Table:</b> Persists scan_id, target URL, status, viewports, JSON results, and error logs.</li>
+            <li><b>Automatic Timestamps:</b> Tracks created_at and completed_at using UTC timezone.</li>
+            <li><b>Persistent History:</b> <code>GET /api/scans</code> queries SQLite database ordered by recency.</li>
+            <li><b>Model Serialization:</b> <code>to_dict()</code> formats responses and calculates detected issues.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Self-Healing & Security -->
+    <div class="slide" data-slide="8">
+      <span class="badge">Implementation Detail 3</span>
+      <h2 class="slide-title">Self-Healing Rescan Loop & Security Hardening</h2>
+      <p class="slide-subtitle">Closing the loop with CSS patch injection and enforcing strict enterprise safeguards.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="cyan">Closed-Loop Verification Engine</h3>
+          <ul>
+            <li><code>POST /api/rescan</code>: Accepts target URL + proposed CSS patch.</li>
+            <li><b>Live Injection:</b> Playwright injects CSS rules directly via <code>page.add_style_tag()</code>.</li>
+            <li><b>Deterministic Re-Evaluation:</b> Re-evaluates overflow and off-screen buttons on modified DOM.</li>
+            <li><b>Outcome Classification:</b> Automatically marks status as <code>verified_resolved</code> or <code>verification_failed</code>.</li>
+            <li><code>POST /api/verify_fix</code>: Provides complete contract compatibility for frontend <code>api.js</code>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="orange">Enterprise Security & Observability</h3>
+          <ul>
+            <li><b>SSRF Protection:</b> Enforces strict <code>ALLOWED_DOMAINS</code> allowlist (localhost, 127.0.0.1).</li>
+            <li>Blocks internal network probing and malicious external URLs with <b>400 Bad Request</b>.</li>
+            <li><b>Custom Middleware:</b> Measures execution duration and injects <code>X-Process-Time</code> header.</li>
+            <li><b>Distributed Tracing:</b> Assigns unique UUID <code>X-Request-ID</code> to every request for audit trails.</li>
+            <li><b>Artifact Cleanup:</b> <code>DELETE /api/artifacts/clean</code> frees server disk space safely.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: Mid-Review Status -->
+    <div class="slide" data-slide="9">
+      <span class="badge">Mid-Review Verification</span>
+      <h2 class="slide-title">Milestone Status & Verification Evidence</h2>
+      <p class="slide-subtitle">All Phase 1 & Phase 2 deliverables implemented, tested, and validated.</p>
+      <div class="grid-4" style="flex: 0.6; margin-bottom: 1.25rem;">
+        <div class="card" style="text-align: center; justify-content: center;">
+          <div class="stat-number" style="color: var(--green);">54 / 54</div>
+          <div class="stat-desc">Full Project Tests Passing in 0.73s</div>
+        </div>
+        <div class="card" style="text-align: center; justify-content: center;">
+          <div class="stat-number" style="color: var(--cyan);">12 / 12</div>
+          <div class="stat-desc">Backend Integration Tests Green</div>
+        </div>
+        <div class="card" style="text-align: center; justify-content: center;">
+          <div class="stat-number" style="color: var(--indigo);">10+ Days</div>
+          <div class="stat-desc">Git Working-Day Discipline Met</div>
+        </div>
+        <div class="card" style="text-align: center; justify-content: center;">
+          <div class="stat-number" style="color: var(--orange);">0 Secrets</div>
+          <div class="stat-desc">Zero Leaked API Keys in Repo</div>
+        </div>
+      </div>
+      <div class="card" style="flex: 0.4;">
+        <h3 class="cyan">Deliverables Summary & Readiness</h3>
+        <ul>
+          <li>All Week 1 & Week 2 requirements from Infotact Solutions' Work Guide completed.</li>
+          <li>Individual branch (<code>PRIYANSHU</code>) fully tested and merged into shared main repository.</li>
+          <li>Comprehensive API documentation live and interactive at <code>/docs</code> (Swagger UI).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: Roadmap -->
+    <div class="slide" data-slide="10">
+      <span class="badge">Looking Ahead</span>
+      <h2 class="slide-title">Next-Day Roadmap & Weeks 3-4 Milestones</h2>
+      <p class="slide-subtitle">Transitioning from core foundation to automated self-healing and CI/CD integration.</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3 class="cyan">Week 3: AI Patch Triage</h3>
+          <ul>
+            <li>Wire <code>/api/rescan</code> directly to Member 3's Vision AI output pipeline.</li>
+            <li>Automate the loop: Finding detected &rarr; CSS patch proposed &rarr; Rescan executed &rarr; Status updated.</li>
+            <li>Verify visual defects like mobile overflow are automatically marked <code>verified_resolved</code>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="indigo">Week 3: GitHub PR Bot</h3>
+          <ul>
+            <li>Implement automated Git branch and Pull Request creation using PyGithub.</li>
+            <li>When a CSS patch is verified resolved, automatically open a PR on target repo.</li>
+            <li>Attach visual evidence (before/after screenshot comparison) to PR description.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="green">Week 4: Optimization</h3>
+          <ul>
+            <li><b>Selective Screenshot Cropping:</b> Crop element bounding boxes to reduce VLM latency and token cost.</li>
+            <li><b>Performance Tuning:</b> Optimize Playwright browser context caching for sub-second latency.</li>
+            <li>Full regression test run and final demonstration rehearsal with team.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 11: Summary & Viva -->
+    <div class="slide hero-slide" data-slide="11" style="text-align: center; align-items: center;">
+      <h1 style="color: var(--cyan); margin-bottom: 0.5rem;">OmniSight</h1>
+      <h2 style="color: var(--text); font-size: 2rem; margin-bottom: 1.5rem;">Thank You! Ready for Technical Evaluation & Viva.</h2>
+      <p style="color: var(--indigo); font-weight: 600; font-size: 1.25rem;">Priyanshu Singh &bull; Backend & Browser Automation Engineer &bull; OMNISIGHT</p>
+      <div style="margin-top: 2rem; color: var(--muted); font-size: 0.95rem;">
+        FastAPI &bull; Playwright &bull; SQLAlchemy &bull; SQLite &bull; Pytest
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation Control -->
+  <div class="nav-bar">
+    <button class="nav-btn" id="prevBtn" onclick="prevSlide()">&#8592; Previous</button>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span class="nav-counter" id="counter">Slide 1 of 11</span>
+      <span class="keys-hint">(Use Arrow Keys &#8592; &#8594; or Spacebar to Navigate)</span>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="nav-btn" onclick="toggleFullscreen()">&#x26F6; Fullscreen</button>
+      <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Next &#8594;</button>
+    </div>
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 11;
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+      currentSlide = index;
+
+      document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+      const activeSlide = document.querySelector(`.slide[data-slide="${currentSlide}"]`);
+      if (activeSlide) activeSlide.classList.add('active');
+
+      document.getElementById('counter').innerText = `Slide ${currentSlide} of ${totalSlides}`;
+      document.getElementById('prevBtn').disabled = (currentSlide === 1);
+      document.getElementById('nextBtn').disabled = (currentSlide === totalSlides);
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+    });
+
+    showSlide(1);
+  </script>
+</body>
+</html>

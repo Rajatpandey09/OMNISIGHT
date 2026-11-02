@@ -90,8 +90,9 @@ Private API keys never reach the browser. The backend is decoupled from AI vendo
 
 | Area | Tools |
 |---|---|
-| Backend | Python, FastAPI, Uvicorn, Pydantic |
+| Backend | Python, FastAPI, Uvicorn, Pydantic, SQLAlchemy, SQLite |
 | Browser automation | Playwright (async API), headless Chromium |
+| Task Processing | FastAPI BackgroundTasks (Asynchronous 202 Accepted + Polling) |
 | Vision AI | Ollama (`gemma4:31b-cloud`), JSON schema validation |
 | Frontend | HTML, CSS, JavaScript |
 | Testing | pytest, HTML/CSS faulty test pages, JSON and Markdown evidence |
@@ -188,18 +189,41 @@ python -m http.server 5500
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/` | Service info |
-| `GET` | `/health` | Health check |
-| `POST` | `/api/scan` | Scan a URL at desktop and mobile viewports |
-| `GET`/`DELETE` | `/api/artifacts` | List or clean up stored artifacts |
+| `GET` | `/` | Service info and active role status |
+| `GET` | `/health` | Health check and database connection status |
+| `POST` | `/api/scan` | Initiate async browser scan across desktop & mobile (returns `202 Accepted`) |
+| `GET` | `/api/scans/{scan_id}` | Poll scan status, execution progress, and extracted metrics |
+| `GET` | `/api/scans` | Retrieve persistent history of all executed scans from SQLite |
+| `DELETE` | `/api/scans/{scan_id}` | Delete scan record and associated screenshot artifacts |
+| `POST` | `/api/rescan` | Inject proposed CSS patch and re-evaluate layout to verify resolution |
+| `POST` | `/api/verify_fix` | Verify fix resolution state for frontend dashboard |
+| `GET` | `/api/artifacts` | List all stored screenshot artifacts with file sizes |
+| `DELETE` | `/api/artifacts/clean` | Delete all generated screenshot files to free local disk space |
 
 **Scan request:**
 
 ```json
-{ "url": "http://localhost:5500/page.html", "scan_id": "demo-001" }
+{ 
+  "url": "http://localhost:5500/test-pages/horizontal_overflow.html", 
+  "scan_id": "demo-001",
+  "viewports": ["desktop", "mobile"]
+}
 ```
 
-The response contains metadata, screenshot file paths, and layout metrics (scroll dimensions, horizontal overflow, button bounding boxes, text content and hidden-control state) for each viewport.
+The response returns immediately with `202 Accepted` and a polling URL:
+
+```json
+{
+  "scan_id": "demo-001",
+  "status": "pending",
+  "url": "http://localhost:5500/test-pages/horizontal_overflow.html",
+  "viewports": ["desktop", "mobile"],
+  "message": "Scan scheduled in background. Poll /api/scans/{scan_id} for progress.",
+  "results": []
+}
+```
+
+Once completed, polling `GET /api/scans/{scan_id}` returns metadata, screenshot file paths, and deep DOM layout metrics (scroll dimensions, horizontal overflow, button bounding boxes, text content, and hidden-control state) for each viewport.
 
 ## Vision AI Module
 
