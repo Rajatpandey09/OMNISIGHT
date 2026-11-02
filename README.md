@@ -135,7 +135,7 @@ omnisight/
 ### Installation
 
 ```bash
-git clone https://github.com/<your-org>/omnisight.git
+git clone https://github.com/<https://github.com/Rajatpandey09/OMNISIGHT>/omnisight.git
 cd omnisight
 
 python -m venv .venv
