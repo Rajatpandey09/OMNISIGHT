@@ -5719,3 +5719,184 @@ button:active {
         padding: 4px 8px;
     }
 }
+/* ==========================================
+   OMNISIGHT ENHANCEMENT 01
+   PREMIUM GLASSMORPHISM & GLOW EFFECTS
+========================================== */
+
+.dashboard-card,
+.stat-card,
+.metric-card,
+.panel,
+.issue-card {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(
+        145deg,
+        rgba(30, 41, 59, 0.75),
+        rgba(15, 23, 42, 0.88)
+    );
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: transform 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover,
+.stat-card:hover,
+.metric-card:hover,
+.panel:hover,
+.issue-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 12px 35px rgba(14, 165, 233, 0.09);
+}
+
+button,
+.btn,
+.action-button {
+    transition: all 0.25s ease;
+}
+
+button:hover,
+.btn:hover,
+.action-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+}
+
+button:active,
+.btn:active {
+    transform: scale(0.97);
+}
+
+.stat-card::after,
+.metric-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    width: 76%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(56, 189, 248, 0.6),
+        transparent
+    );
+    pointer-events: none;
+}
+
+:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 4px;
+}
+/* ==========================================
+   OMNISIGHT ENHANCEMENT 02
+   QA DASHBOARD MICRO-INTERACTIONS
+========================================== */
+
+/* Status indicators */
+.status-dot,
+.online-indicator {
+    position: relative;
+    border-radius: 50%;
+}
+
+.status-dot::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    opacity: 0;
+    animation: omniPulse 2s ease-out infinite;
+}
+
+@keyframes omniPulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* Severity styling */
+.severity-critical,
+.severity-high {
+    border-left: 3px solid #ef4444;
+}
+
+.severity-medium {
+    border-left: 3px solid #f59e0b;
+}
+
+.severity-low {
+    border-left: 3px solid #22c55e;
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+        180deg,
+        #0ea5e9,
+        #6366f1
+    );
+    border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #38bdf8;
+}
+
+/* Better text rendering */
+h1, h2, h3 {
+    letter-spacing: -0.6px;
+}
+
+p, span, label {
+    text-rendering: optimizeLegibility;
+}
+
+/* Smooth issue transitions */
+.issue-card,
+.scan-item,
+.activity-item {
+    animation: omniFadeIn 0.45s ease both;
+}
+
+@keyframes omniFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
