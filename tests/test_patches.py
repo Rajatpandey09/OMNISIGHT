@@ -146,6 +146,15 @@ def test_prompt_marks_html_untrusted_and_carries_the_problem():
     assert "untrusted" in prompt and "wide banner" in prompt and "x()" not in prompt
 
 
+def test_feedback_from_earlier_attempts_reaches_the_prompt():
+    prov = Scripted(reply(GOOD))
+    run(prov, feedback="attempt 1: CSS `.banner { width: 90% }` still overflows")
+    assert "did NOT fix it" in prov.prompts[0] and "still overflows" in prov.prompts[0]
+    prov2 = Scripted(reply(GOOD))
+    run(prov2)
+    assert "did NOT fix it" not in prov2.prompts[0]
+
+
 def test_result_serialises_to_plain_json():
     res = run(Scripted(reply(GOOD)))
     assert json.loads(json.dumps(res.to_dict()))["patches"][0]["selector"] == ".banner"
