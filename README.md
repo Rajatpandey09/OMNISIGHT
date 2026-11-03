@@ -136,8 +136,8 @@ omnisight/
 ### Installation
 
 ```bash
-git clone https://github.com/<https://github.com/Rajatpandey09/OMNISIGHT>/omnisight.git
-cd omnisight
+git clone https://github.com/Rajatpandey09/OMNISIGHT.git
+cd OMNISIGHT
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -256,7 +256,7 @@ Written to `analysis.json`.
 Sends the image only, with no metrics or HTML, to test what the model can see on its own:
 
 ```bash
-python -m vision.cli --screenshot-only path/to/screenshot.png
+python run_eval.py --provider ollama --screenshot-only --timeout 300
 ```
 
 ### Evaluation
@@ -270,13 +270,23 @@ The evaluation runner compares findings with `eval/labelled_cases.json` and repo
 
 Results are reported as counts (for example, "found X of Y seeded bugs, Z false alarms"), not as accuracy percentages.
 
+### Week 3 and 4 additions
+
+| Module | What it does |
+|---|---|
+| `vision/patches.py` | Suggests small CSS fixes as validated JSON and checks BEFORE/AFTER screenshots. Unsafe CSS is dropped, the model never chooses the file path, and nothing is executed. |
+| `vision/heal.py` | Self-healing loop: suggest a fix, apply it to a local copy (supplied by the caller), rescan, verify, retry up to 3 times. A fix counts as fixed only when the model and a metrics rescan agree. |
+| `vision/crop.py`, `vision/chunk.py` | Crop to the problem area for a close-up check, tile tall pages, and measure what a crop saves. |
+
+Command line tools: `run_patches.py`, `run_verify.py`, `run_crop.py` and `run_savings.py` (each accepts `--help`).
+
 ## Testing and QA
 
 ```bash
 pytest
 ```
 
-The suite covers API health checks, SSRF guard behaviour, and the vision module (33 tests).
+The suite covers API health checks, SSRF guard behaviour, and the vision module (analysis pipeline, patch suggestions, self-healing loop, cropping and evaluation).
 
 ### QA test cases
 
@@ -312,18 +322,19 @@ OmniSight is in active development (mid-project review stage).
 |---|---|
 | FastAPI backend and dual-viewport Playwright scanning | Built |
 | SSRF guard, retries, request tracing, artifact storage | Built |
-| Vision pipeline, provider chain, analyzer, evaluation runner | Built, 33 tests passing |
+| Vision pipeline, provider chain, analyzer, evaluation runner | Built, unit-tested |
 | QA test pages and manual evidence | Built (manual reproduction confirmed) |
 | Dashboard layout and scan form | In progress |
-| Vision audit on real screenshots | **Pending** |
+| Vision audit | Done on 9 synthetic pages (screenshot-only, 3 runs): 4 of 5 seeded bugs found in every run, hidden control missed, no false alarms on 4 clean pages. **Real screenshots pending** |
 | End-to-end scan from dashboard | **Pending** |
-| Automated fix proposal, application and verification | **Pending** |
+| Fix proposal and before/after verification (vision module) | Built, unit-tested; real-model run pending |
+| Applying fixes in the browser, GitHub pull requests, dashboard approval | **Pending** |
 
 > Manual reproduction of a bug is **not** proof of automated detection or self-healing. Features are marked complete only after their behaviour has been verified.
 
 ## Limitations
 
-- The vision audit has not yet been run on real screenshots, so no detection results are claimed.
+- The vision audit ran on nine synthetic (drawn) pages, not real browser captures, and the prompt rules were tuned after seeing those pages fail. Results are counts on a small set, not accuracy.
 - A hidden element is not drawn in a screenshot, so a pure screenshot audit is expected to miss a hidden submit button. Metrics from the scanner are needed to catch it.
 - The cloud model sends screenshots off-device.
 - The domain allow-list limits scanning to a small set of hosts.
@@ -332,9 +343,9 @@ OmniSight is in active development (mid-project review stage).
 
 - [x] **Week 1:** Finding schema, provider interface, FastAPI scaffolding, Playwright dual-viewport scanning
 - [x] **Week 2:** Screenshot-to-JSON pipeline, Ollama adapter, fallback chain, evaluation runner
-- [ ] **Mid-review:** Vision audit on real screenshots
-- [ ] **Week 3:** Patch suggestions (file path, selector, rationale), self-healing loop with before/after verification, GitHub integration for branches and pull requests
-- [ ] **Week 4:** Screenshot cropping to anomalous components, QA dashboard to approve or reject fixes, final evaluation table
+- [x] **Mid-review:** Vision audit on synthetic pages (real screenshots still pending)
+- [ ] **Week 3:** Patch suggestions and self-healing loop with before/after verification (built in the vision module, real-model run pending); applying fixes in the browser and GitHub pull requests (pending)
+- [ ] **Week 4:** Screenshot cropping and tiling (built, real-model run pending); QA dashboard to approve or reject fixes (pending); final evaluation table
 
 ## Team
 

@@ -14,11 +14,8 @@ def _unfence(text: str) -> str:
 
 
 def extract_json(text: str) -> dict:
-    unfenced = _unfence(text)
-    try:
-        return json.loads(unfenced)
-    except json.JSONDecodeError:
-        return json.loads(_strip_trailing_commas(unfenced))
+    """Strict: remove a code fence and parse. No repair. Use parse_model_json to repair."""
+    return json.loads(_unfence(text))
 
 
 def _strip_trailing_commas(text: str) -> str:
@@ -54,7 +51,7 @@ def _analyze_once(provider: VisionProvider, scan_id: str, viewport: str,
     try:
         data, repaired = parse_model_json(raw)
         out = ModelOutput.model_validate(data)
-    except (json.JSONDecodeError, ValidationError, TypeError) as e:
+    except (json.JSONDecodeError, ValidationError, TypeError, AttributeError) as e:
         return AnalysisResult(**base(), outcome="invalid_output",
                               error=f"{type(e).__name__}: {str(e)[:200]} | raw starts: {str(raw)[:300]!r}")
     findings = [Finding(**f.model_dump(), scan_id=scan_id, viewport=viewport,
