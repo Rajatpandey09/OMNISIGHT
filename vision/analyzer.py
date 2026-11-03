@@ -14,6 +14,7 @@ def _unfence(text: str) -> str:
 
 
 def extract_json(text: str) -> dict:
+    """Strict: remove a code fence and parse. No repair. Use parse_model_json to repair."""
     return json.loads(_unfence(text))
 
 
@@ -25,7 +26,7 @@ def parse_model_json(raw: str):
     """Strict parse first. If that fails, retry after removing trailing commas (a common
     small-model slip). Returns (data, repaired). Anything still broken raises."""
     try:
-        return extract_json(raw), False
+        return json.loads(_unfence(raw)), False
     except json.JSONDecodeError:
         return json.loads(_strip_trailing_commas(_unfence(raw))), True
 

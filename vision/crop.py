@@ -20,7 +20,7 @@ import io
 import json
 from dataclasses import asdict, dataclass
 
-from .analyzer import extract_json
+from .analyzer import parse_model_json
 from .providers.base import MissingCredentials, ProviderError, VisionProvider
 
 MIN_SIDE = 200        # a crop is widened to at least this many pixels (when the image allows)
@@ -205,7 +205,7 @@ def _zoom_once(provider, finding, crop, ctx, timeout):
     except Exception as e:  # defensive: never crash a scan
         return make("provider_error", error=repr(e))
     try:
-        data = extract_json(raw)
+        data, _ = parse_model_json(raw)
         if not isinstance(data, dict):
             raise ValueError("reply must be a JSON object")
         verdict = data.get("verdict")

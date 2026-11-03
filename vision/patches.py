@@ -21,7 +21,7 @@ import json
 import re
 from dataclasses import asdict, dataclass, field
 
-from .analyzer import extract_json
+from .analyzer import parse_model_json
 from .prompts import clean_html
 from .providers.base import MissingCredentials, ProviderError, VisionProvider
 
@@ -208,7 +208,7 @@ def _patches_once(provider, finding, image_png, ctx, prompt, file_path, timeout)
     except Exception as e:  # defensive: never crash a scan
         return make("provider_error", error=repr(e))
     try:
-        data = extract_json(raw)
+        data, _ = parse_model_json(raw)
         if not isinstance(data, dict) or not isinstance(data.get("patches", []), list):
             raise ValueError("reply must be an object with a patches list")
     except (json.JSONDecodeError, ValueError, TypeError) as e:
@@ -349,7 +349,7 @@ def _verify_once(provider, image, ctx, prompt, timeout):
     except Exception as e:
         return make("provider_error", error=repr(e))
     try:
-        data = extract_json(raw)
+        data, _ = parse_model_json(raw)
         if not isinstance(data, dict):
             raise ValueError("reply must be a JSON object")
         verdict = data.get("verdict")

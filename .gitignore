@@ -1,22 +1,15 @@
-<<<<<<< HEAD
-.env
-__pycache__/
-.pytest_cache/
-*.pyc
-.venv/
-=======
 .venv/
 .venv312/
 __pycache__/
 *.py[cod]
+*.pyc
+.pytest_cache/
 artifacts/
 backend/artifacts/
 backend/scan_records.json
 .env
 .env.*
 !.env.example
-
-__pycache__/
-*.pyc
-artifacts/
->>>>>>> 659b091b162f0f44f259aeb51d74da8aa2f6d19f
+*.db
+*.sqlite
+*.sqlite3
