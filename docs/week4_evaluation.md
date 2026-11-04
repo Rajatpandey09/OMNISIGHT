@@ -49,3 +49,24 @@ Each run: 4 true positives, 0 false positives, 1 false negative, 0 inconclusive,
 - The close-up check and the patch/verification work are unit-tested with fake providers only. They have not
   been run on the real model yet.
 - The model runs in Ollama's cloud, so screenshots leave the laptop.
+
+
+## Real-model runs (added after the first runs)
+Setup: a small scan of two synthetic pages (a low-contrast desktop page and an overflow mobile page), plus
+the clean mobile and desktop pages as controls, gemma4:31b-cloud. These runs supersede the limitation above
+for patch suggestions and the close-up check. The before/after verification and the self-healing loop have
+still not been run on the real model.
+
+- Analysis: both viewports returned `ok` with one finding each.
+- Patch suggestions: one patch per finding, none rejected, none applied or verified. The model cannot see
+  source code and the pages are drawn images, so the selectors are guesses.
+- Close-up check, first prompt: it confirmed an overflow bug on the clean page in both control runs, so it was
+  not reliable.
+- Close-up check, neutral prompt (earlier step may be wrong, specific evidence required, earlier evidence
+  not repeated): buggy pages confirmed in 6 of 6 runs. Clean pages were never confirmed in 9 completed runs
+  (8 not_confirmed, 1 inconclusive); one further run was lost to a file-lock error. The prompt was reworded
+  after seeing the failed control, so this is tuned on seen pages.
+- Cropping savings: the crop sent 66% (desktop) and 89% (mobile) fewer pixels, and 49% and 93% fewer bytes.
+  Median seconds over five runs: mobile 3.62 to 2.89 (about 20% faster, all five runs), desktop 3.04 to 2.85
+  (about 6% faster, four of five runs). One page each, so a small saving, not a benchmark.
+- Not yet tested: whether a suggested fix works on a real page, and pages the prompts have not seen.
