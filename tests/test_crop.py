@@ -165,3 +165,12 @@ def test_result_serialises_to_plain_json():
     res = second_look(Scripted(verdict()), FINDING, png(), scan_id="s1", viewport="mobile")
     assert json.loads(json.dumps(res.to_dict()))["verdict"] == "confirmed"
     assert json.loads(json.dumps(crop_region(png(), FINDING["bbox"]).to_dict()))["reason"] == "ok"
+
+
+def test_close_up_prompt_does_not_carry_the_earlier_steps_evidence():
+    from vision.crop import ZOOM_SYSTEM_PROMPT, build_zoom_prompt
+    prompt = build_zoom_prompt({"issue_type": "low_contrast", "element": "body text",
+                                "evidence": "SECRET-CLAIM"}, "mobile")
+    assert "SECRET-CLAIM" not in prompt and "may be wrong" in prompt
+    assert "body text" in prompt and "low_contrast" in prompt
+    assert "not_confirmed" in ZOOM_SYSTEM_PROMPT and "specific visible evidence" in ZOOM_SYSTEM_PROMPT
