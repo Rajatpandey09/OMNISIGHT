@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Depends, status
 from fastapi.responses import JSONResponse
@@ -477,8 +477,8 @@ def get_dashboard(db: Session = Depends(get_db)):
 
 
 @app.get("/api/issues", status_code=status.HTTP_200_OK, tags=["Frontend"])
-def get_issues(db: Session = Depends(get_db)):
-    """Return all detected layout issues extracted from scan records."""
+def get_issues(request: Request, db: Session = Depends(get_db)):
+    """Return detected issues with frontend-compatible screenshot and CSS fields."""
     records = db.query(ScanRecord).all()
     issues_list = []
     for r in records:
@@ -486,11 +486,23 @@ def get_issues(db: Session = Depends(get_db)):
             vp = res.get("viewport", "desktop")
             metrics = res.get("metrics", {})
             screenshot = res.get("screenshot", "")
+            screenshot_url = (
+                f"{str(request.base_url).rstrip('/')}/artifacts/{quote(Path(screenshot).name)}"
+                if screenshot and (Path(ARTIFACT_DIR) / Path(screenshot).name).is_file()
+                else None
+            )
 
             if metrics.get("has_horizontal_overflow"):
+                overflow_css = (
+                    "/* Scope this to the element causing overflow after inspecting the page. */\n"
+                    "html, body { max-width: 100%; overflow-x: clip; }\n"
+                    "/* Prefer fixing the oversized child: */\n"
+                    ".wide-banner, .wide-content { max-width: 100%; box-sizing: border-box; }"
+                )
+                issue_identifier = f"ISSUE-{r.scan_id}-{vp}-OVERFLOW"
                 issues_list.append({
-                    "id": f"ISSUE-{r.scan_id[:8]}-OVERFLOW",
-                    "issue_id": f"ISSUE-{r.scan_id[:8]}-OVERFLOW",
+                    "id": issue_identifier,
+                    "issue_id": issue_identifier,
                     "title": f"Horizontal Overflow Detected ({vp.capitalize()})",
                     "type": "horizontal_overflow",
                     "issue_type": "horizontal_overflow",
@@ -501,16 +513,25 @@ def get_issues(db: Session = Depends(get_db)):
                     "status": "detected",
                     "scan_id": r.scan_id,
                     "target_url": r.url,
-                    "screenshot": f"/artifacts/{screenshot}" if screenshot else None,
-                    "suggested_fix": ".wide-banner { max-width: 100%; width: auto; }",
+                    "screenshot": screenshot_url,
+                    "screenshot_url": screenshot_url,
+                    "before_screenshot": screenshot_url,
+                    "suggested_fix": overflow_css,
+                    "suggested_css": overflow_css,
                     "description": f"Content scroll width ({metrics.get('scroll_width')}px) exceeds visible screen width ({res.get('width')}px)."
                 })
 
             for idx, b in enumerate(metrics.get("buttons", [])):
                 if b.get("is_off_screen"):
+                    button_css = (
+                        f"{b.get('selector') or 'button'} {{ "
+                        "position: static; max-width: 100%; box-sizing: border-box; "
+                        "margin-inline: auto; }"
+                    )
+                    issue_identifier = f"ISSUE-{r.scan_id}-{vp}-BUTTON-{idx}"
                     issues_list.append({
-                        "id": f"ISSUE-{r.scan_id[:8]}-BUTTON-{idx}",
-                        "issue_id": f"ISSUE-{r.scan_id[:8]}-BUTTON-{idx}",
+                        "id": issue_identifier,
+                        "issue_id": issue_identifier,
                         "title": f"Off-Screen Button ({b.get('text') or b.get('selector')})",
                         "type": "offscreen_button",
                         "issue_type": "offscreen_button",
@@ -521,8 +542,11 @@ def get_issues(db: Session = Depends(get_db)):
                         "status": "detected",
                         "scan_id": r.scan_id,
                         "target_url": r.url,
-                        "screenshot": f"/artifacts/{screenshot}" if screenshot else None,
-                        "suggested_fix": f"{b.get('selector')} {{ position: static; margin-top: 1rem; }}",
+                        "screenshot": screenshot_url,
+                        "screenshot_url": screenshot_url,
+                        "before_screenshot": screenshot_url,
+                        "suggested_fix": button_css,
+                        "suggested_css": button_css,
                         "description": "Target interactive button is clipped outside visible window boundary."
                     })
 
