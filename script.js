@@ -382,7 +382,9 @@ async function runVisionAnalysis() {
     const id = currentReview.id || currentReview.issue_id;
     const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
     if (existing) Object.assign(existing, currentReview);
-    openReview(id); toast("Vision findings loaded from the selected scan.");
+    openReview(id);
+    setState($("#reviewState"), "success", "Vision AI analysis completed", `${analysis.viewport} viewport · ${finding.issue_type} · ${Math.round((finding.confidence || 0)*100)}% confidence. ${finding.evidence || finding.summary || "Finding loaded."} The desktop result is not applied to this mobile issue.`);
+    toast("Vision findings loaded from the selected scan.");
   } catch (error) { setState($("#reviewState"), "error", "Vision analysis failed", error.message); toast("Vision analysis failed."); }
   finally { if (button) { button.disabled = false; button.textContent = "Analyze screenshots with Vision AI →"; } }
 }
