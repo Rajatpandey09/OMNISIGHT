@@ -313,19 +313,7 @@ async def create_scan(
     By default runs asynchronously via FastAPI BackgroundTasks and returns 202 Accepted.
     If sync=True, waits for execution and returns 200 OK.
     """
-    parsed_target = urlparse(payload.url)
-    target_host = (parsed_target.hostname or "").lower().rstrip(".")
-    if (
-        parsed_target.scheme not in {"http", "https"}
-        or target_host not in ALLOWED_DOMAINS
-        or parsed_target.username is not None
-        or parsed_target.password is not None
-        or not parsed_target.netloc
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Target URL is not permitted. Only explicitly allow-listed HTTP/HTTPS hosts may be scanned."
-        )
+    validate_target_url(payload.url)
 
     scan_identifier = payload.scan_id or f"scan-{uuid.uuid4().hex[:8]}"
     viewports = payload.viewports or ["desktop", "mobile"]
