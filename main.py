@@ -492,7 +492,13 @@ def get_issues(request: Request, db: Session = Depends(get_db)):
                 else None
             )
 
-            if metrics.get("has_horizontal_overflow"):
+            # If an off-screen control is already identified in this viewport,
+            # report that root cause once instead of duplicating it as generic overflow.
+            has_offscreen_control = any(
+                button.get("is_off_screen")
+                for button in metrics.get("buttons", [])
+            )
+            if metrics.get("has_horizontal_overflow") and not has_offscreen_control:
                 overflow_css = (
                     "/* Scope this to the element causing overflow after inspecting the page. */\n"
                     "html, body { max-width: 100%; overflow-x: clip; }\n"
@@ -547,7 +553,7 @@ def get_issues(request: Request, db: Session = Depends(get_db)):
                         "before_screenshot": screenshot_url,
                         "suggested_fix": button_css,
                         "suggested_css": button_css,
-                        "description": "Target interactive button is clipped outside visible window boundary."
+                        "description": "Target interactive button is clipped outside the visible viewport boundary. This element also contributes to the page's horizontal overflow."
                     })
 
     return issues_list
