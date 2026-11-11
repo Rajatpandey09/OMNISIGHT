@@ -482,9 +482,13 @@ async def verify_fix_endpoint(payload: VerifyFixRequest, db: Session = Depends(g
         return await rescan_with_patch(rescan_req, db)
 
     return {
-        "status": "verified_resolved" if record and record.status == "completed" else "pending",
+        "status": "inconclusive" if record and record.status == "completed" else "pending",
         "scan_id": target_scan_id,
-        "message": "Fix verification checked against scan history."
+        "message": (
+            "A completed baseline scan is not proof that a fix worked. Submit the approved CSS patch to /api/rescan with the original scan_id to run a follow-up verification."
+            if record and record.status == "completed"
+            else "The original scan is not yet complete; verification cannot run."
+        )
     }
 
 
