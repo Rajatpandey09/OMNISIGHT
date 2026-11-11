@@ -438,17 +438,14 @@ async def rescan_with_patch(payload: RescanRequest, db: Session = Depends(get_db
     baseline_matches_issue = True
     if payload.issue_type == "horizontal_overflow":
         baseline_matches_issue = baseline_has_overflow
-        if baseline_matches_issue:
-            checks.append(not remaining_overflow)
     elif payload.issue_type == "offscreen_button":
         baseline_matches_issue = baseline_has_offscreen
-        if baseline_matches_issue:
-            checks.append(not remaining_offscreen)
-    elif not payload.issue_type:
-        if baseline_has_overflow:
-            checks.append(not remaining_overflow)
-        if baseline_has_offscreen:
-            checks.append(not remaining_offscreen)
+    elif payload.issue_type:
+        baseline_matches_issue = False
+    if baseline_has_overflow:
+        checks.append(not remaining_overflow)
+    if baseline_has_offscreen:
+        checks.append(not remaining_offscreen)
     else:
         baseline_matches_issue = False  # no deterministic verifier is defined for this issue type yet
     if not complete_capture or not baseline_results or not baseline_matches_issue or not checks:
