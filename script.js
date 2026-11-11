@@ -349,9 +349,9 @@ function imagePanel(url,label){
  if(url)return `<figure class="screenshot-frame"><img src="${esc(url)}" alt="${esc(label)} screenshot" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="image-unavailable" hidden>Screenshot could not be loaded.</div><figcaption>${esc(label)}</figcaption></figure>`;
  return `<div class="screenshot-placeholder"><div class="placeholder-browser"><i></i><i></i><i></i></div><div class="placeholder-lines"><span></span><span></span><span></span></div><div class="placeholder-message">No screenshot supplied by the backend</div><small>${esc(label)}</small></div>`;
 }
-function openReview(id){
+function openReview(id, preservePage = false){
  const issue=data.issues.find(i=>String(i.id||i.issue_id)===String(id));if(!issue){toast("Issue details were not found in the current data.");return}
- currentReview=issue;navigate("review");
+ currentReview=issue;if(!preservePage)navigate("review");
  const state=normalizeState(issue.state||issue.verification_state||issue.status);
  const before=issue.before_screenshot||issue.screenshot_url||issue.evidence_screenshot||issue.evidence?.before_screenshot||"";
  const after=issue.after_screenshot||issue.verification_screenshot||issue.evidence?.after_screenshot||"";
@@ -382,7 +382,7 @@ async function runVisionAnalysis() {
     const id = currentReview.id || currentReview.issue_id;
     const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
     if (existing) Object.assign(existing, currentReview);
-    openReview(id);
+    openReview(id, true);
     setState($("#reviewState"), "success", "Vision AI analysis completed", `${analysis.viewport} viewport · ${finding.issue_type} · ${Math.round((finding.confidence || 0)*100)}% confidence. ${finding.evidence || finding.summary || "Finding loaded."} The desktop result is not applied to this mobile issue.`);
     toast("Vision findings loaded from the selected scan.");
   } catch (error) { setState($("#reviewState"), "error", "Vision analysis failed", error.message); toast("Vision analysis failed."); }
