@@ -227,7 +227,7 @@ curl -X POST http://127.0.0.1:8000/api/ai/heal/SCAN_ID \
   -d '{"finding_index":0,"viewport":"mobile","max_attempts":2}'
 ```
 
-The Fix Review screen can run the VLM analysis and the isolated self-healing test. The healing route uses the existing validated patch generator, captures an after screenshot in a temporary Playwright browser, asks the VLM to compare before/after, and combines the model verdict with deterministic metrics where available. It returns the attempt history and final CSS. **It does not modify the original website or repository source files.** Human review remains mandatory before any source change or GitHub commit.
+The Fix Review screen can run VLM analysis, test an AI-generated proposal in an isolated browser, or explicitly approve a displayed CSS proposal and run a controlled patch rescan followed by VLM + metrics verification. A result is marked verified only when the model and applicable deterministic checks agree. **These browser tests do not modify the original website or repository source files.** Human review remains mandatory before any source change or GitHub commit.
 
 The scan-aware Q&A workspace is provided by `qa_assistant.py` and `qa-widget.js`. It answers questions from the selected scan's stored metrics and metadata; it is not a replacement for VLM screenshot analysis.
 
@@ -244,6 +244,7 @@ See [original project requirement traceability](docs/ORIGINAL_PROJECT_REQUIREMEN
 | `GET` | `/api/scans` | Retrieve persistent history of all executed scans from SQLite |
 | `DELETE` | `/api/scans/{scan_id}` | Delete scan record and associated screenshot artifacts |
 | `POST` | `/api/rescan` | Inject proposed CSS patch and re-evaluate layout to verify resolution |
+| `POST` | `/api/ai/verify/{scan_id}` | Compare original and follow-up screenshots with VLM + metrics after human-approved patch test |
 | `POST` | `/api/verify_fix` | Verify fix resolution state for frontend dashboard |
 | `GET` | `/api/artifacts` | List all stored screenshot artifacts with file sizes |
 | `DELETE` | `/api/artifacts/clean` | Delete all generated screenshot files to free local disk space |
