@@ -4,6 +4,7 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
+import re
 from pathlib import Path
 from urllib.parse import urlparse, quote
 
@@ -17,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from database import init_db, get_db, SessionLocal, ScanRecord
 from qa_assistant import router as qa_router
+from vision_api import router as vision_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +38,7 @@ app = FastAPI(
 )
 
 app.include_router(qa_router)
+app.include_router(vision_router)
 
 # Configure exact browser origins; never use wildcard CORS for a public deployment.
 _default_origins = "http://127.0.0.1:5500,http://localhost:5500"
@@ -60,6 +63,15 @@ app.mount("/artifacts", StaticFiles(directory=ARTIFACT_DIR), name="artifacts")
 
 # SSRF Protection: strictly allowlisted hostnames
 ALLOWED_DOMAINS = ["localhost", "127.0.0.1", "example.com"]
+
+def validate_target_url(url: str):
+    """Exact-host allow-list shared by scan and patch routes."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if (parsed.scheme not in {"http", "https"} or host not in ALLOWED_DOMAINS
+            or parsed.username is not None or parsed.password is not None
+            or not parsed.netloc or parsed.port not in (None, 80, 443, 5500, 8000)):
+        raise HTTPException(status_code=400, detail="Target URL is not permitted by the configured allow-list.")
 
 # In-memory store maintained alongside SQLite for seamless backward compatibility
 SCAN_HISTORY_STORE = []
@@ -160,6 +172,8 @@ async def run_scan_worker(scan_id: str, url: str, viewports: List[str], css_patc
                     screenshot_path = os.path.join(ARTIFACT_DIR, screenshot_filename)
                     await page.screenshot(path=screenshot_path, full_page=True)
 
+                    relevant_html = (await page.locator("body").inner_html())[:12000]
+
                     metrics = await page.evaluate("""() => {
                         const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="submit"]')).map(el => {
                             const rect = el.getBoundingClientRect();
@@ -189,7 +203,8 @@ async def run_scan_worker(scan_id: str, url: str, viewports: List[str], css_patc
                         "width": cfg["width"],
                         "height": cfg["height"],
                         "screenshot": screenshot_filename,
-                        "metrics": metrics
+                        "metrics": metrics,
+                        "relevant_html": relevant_html
                     })
                 finally:
                     await page.close()
@@ -365,11 +380,9 @@ async def rescan_with_patch(payload: RescanRequest, db: Session = Depends(get_db
     Self-healing verification endpoint:
     Applies a proposed CSS patch directly into the page and rescans to verify defect resolution.
     """
-    if not any(domain in payload.url for domain in ALLOWED_DOMAINS):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Target URL is not permitted by security policies (SSRF protection)."
-        )
+    validate_target_url(payload.url)
+    if len(payload.css_patch) > 4000 or re.search(r"url\\s*\\(|@import|expression\\s*\\(|javascript:", payload.css_patch, re.I):
+        raise HTTPException(status_code=400, detail="CSS patch contains unsupported or unsafe content.")
 
     rescan_id = f"rescan-{uuid.uuid4().hex[:8]}"
     viewports = payload.viewports or ["desktop", "mobile"]
