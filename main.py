@@ -555,10 +555,15 @@ def get_issues(request: Request, db: Session = Depends(get_db)):
 
 @app.post("/api/approve_fix", status_code=status.HTTP_200_OK, tags=["Frontend"])
 def approve_fix(payload: FixActionRequest):
-    """Record human approval of a proposed fix."""
+    """Acknowledge reviewer approval without falsely claiming the patch was applied."""
     return {
-        "status": "applied",
-        "message": f"Fix for issue '{payload.issue_id or payload.scan_id}' has been approved by reviewer."
+        "status": "approved",
+        "applied": False,
+        "message": (
+            f"Proposal for '{payload.issue_id or payload.scan_id}' was approved by the reviewer. "
+            "No target-site files were changed by this endpoint; run an isolated patch and "
+            "follow-up verification before marking the issue resolved."
+        )
     }
 
 
