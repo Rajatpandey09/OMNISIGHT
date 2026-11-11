@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Depends, status
 from fastapi.responses import JSONResponse
@@ -36,13 +37,19 @@ app = FastAPI(
 
 app.include_router(qa_router)
 
-# CORS middleware for local frontend dashboard communication
+# Configure exact browser origins; never use wildcard CORS for a public deployment.
+_default_origins = "http://127.0.0.1:5500,http://localhost:5500"
+FRONTEND_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("FRONTEND_ORIGINS", _default_origins).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=FRONTEND_ORIGINS,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 ARTIFACT_DIR = "artifacts"
@@ -240,10 +247,18 @@ async def create_scan(
     By default runs asynchronously via FastAPI BackgroundTasks and returns 202 Accepted.
     If sync=True, waits for execution and returns 200 OK.
     """
-    if not any(domain in payload.url for domain in ALLOWED_DOMAINS):
+    parsed_target = urlparse(payload.url)
+    target_host = (parsed_target.hostname or "").lower().rstrip(".")
+    if (
+        parsed_target.scheme not in {"http", "https"}
+        or target_host not in ALLOWED_DOMAINS
+        or parsed_target.username is not None
+        or parsed_target.password is not None
+        or not parsed_target.netloc
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Target URL is not permitted by security policies (SSRF protection)."
+            detail="Target URL is not permitted. Only explicitly allow-listed HTTP/HTTPS hosts may be scanned."
         )
 
     scan_identifier = payload.scan_id or f"scan-{uuid.uuid4().hex[:8]}"
