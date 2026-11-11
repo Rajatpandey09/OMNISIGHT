@@ -378,7 +378,7 @@ async function runVisionAnalysis() {
     const preferred = findings.findIndex(item => item.issue_type === (currentReview.type || currentReview.issue_type));
     currentAiFindingIndex = preferred >= 0 ? preferred : 0;
     const finding = findings[currentAiFindingIndex];
-    Object.assign(currentReview, { type:finding.issue_type, issue_type:finding.issue_type, title:finding.summary || finding.issue_type.replaceAll("_"," "), description:finding.evidence || finding.impact || "Vision model identified a possible visual defect.", severity:finding.severity, suggested_css:finding.suggested_fix || "", state:finding.suggested_fix ? "proposed" : "detected", verification_state:"detected", evidence:"VLM confidence: " + Math.round((finding.confidence || 0)*100) + "%. " + (finding.impact || ""), aiFindingIndex:currentAiFindingIndex });
+    Object.assign(currentReview, { type:finding.issue_type, issue_type:finding.issue_type, title:finding.summary || finding.issue_type.replaceAll("_"," "), description:finding.evidence || finding.impact || "Vision model identified a possible visual defect.", severity:finding.severity, ai_suggested_fix:finding.suggested_fix || "", element:finding.element || "", state:finding.suggested_fix ? "proposed" : "detected", verification_state:"detected", evidence:"VLM confidence: " + Math.round((finding.confidence || 0)*100) + "%. " + (finding.impact || ""), aiFindingIndex:currentAiFindingIndex });
     const id = currentReview.id || currentReview.issue_id;
     const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
     if (existing) Object.assign(existing, currentReview);
@@ -395,6 +395,13 @@ async function runIsolatedHealing() {
     const result = await window.OmniSightAPI.healScan(currentReview.scan_id, currentReview.aiFindingIndex, currentReview.viewport || "mobile", 2);
     const attempts = (result.attempts || []).map(a => "Attempt " + a.number + ": " + a.verdict + " — " + a.reason).join(" | ") || "No patch attempt was produced.";
     const css = result.final_css ? " CSS tested: " + result.final_css : "";
+    if (result.final_css) {
+      Object.assign(currentReview, { suggested_css:result.final_css, state:"proposed", aiGeneratedSafePatch:true });
+      const id = currentReview.id || currentReview.issue_id;
+      const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
+      if (existing) Object.assign(existing, currentReview);
+      openReview(id);
+    }
     setState($("#reviewState"), result.status === "fixed" ? "success" : "info", "Isolated browser result: " + result.status, result.message + " " + attempts + css + " Original source files were not modified; human approval is still required.");
     toast("Isolated self-healing test: " + result.status);
   } catch (error) { setState($("#reviewState"), "error", "Self-healing test failed", error.message); toast("Self-healing test failed."); }
