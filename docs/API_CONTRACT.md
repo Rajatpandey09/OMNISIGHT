@@ -13,6 +13,7 @@ Base URL for local development: `http://127.0.0.1:8000`. JSON request/response b
 | POST | `/api/ai/analyze/{scan_id}` | VLM analysis using screenshot + metrics + captured body HTML |
 | POST | `/api/ai/analyze/{scan_id}?screenshot_only=true` | VLM screenshot-only audit |
 | POST | `/api/ai/heal/{scan_id}` | Plan → Execute → Evaluate loop in isolated Playwright context |
+| POST | `/api/ai/verify/{scan_id}` | VLM + metric verification for a human-approved patch rescan |
 | POST | `/api/rescan` | Apply CSS in scan browser context and compare follow-up metrics to baseline |
 | POST | `/api/qa/ask` | Grounded Q&A; body: `{"scan_id":"...","question":"..."}` |
 | POST | `/api/approve_fix` | Records human approval only; does not edit source files |
@@ -50,3 +51,18 @@ The finding index is zero-based within that viewport's VLM findings. The endpoin
 ```
 
 The original `scan_id` is required for a meaningful baseline comparison. Supported metric-specific issue types currently include `horizontal_overflow` and `offscreen_button`. Other issue types must remain inconclusive until matching deterministic verification exists.
+
+### VLM verification after a human-approved patch
+
+`POST /api/ai/verify/{original_scan_id}`
+
+```json
+{
+  "rescan_id": "rescan-id-returned-by-api-rescan",
+  "viewport": "mobile",
+  "issue_type": "offscreen_button",
+  "element": "#save-profile-btn"
+}
+```
+
+The endpoint compares the original and follow-up screenshots with the configured vision provider and combines that result with available deterministic metrics. It returns `verified_resolved` only when both signals support the fix. If a metric is unavailable, the result remains inconclusive rather than accepting a model-only success claim.
