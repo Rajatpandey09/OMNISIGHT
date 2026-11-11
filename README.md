@@ -185,6 +185,14 @@ Open `frontend/index.html` in a browser, or serve it locally:
 python -m http.server 5500
 ```
 
+## Local demo: evidence and review behaviour
+
+The root FastAPI application stores Playwright viewport screenshots in `artifacts/` and serves them at `/artifacts/<filename>`. The live issue API returns `before_screenshot` / `screenshot_url` fields that the Fix Review page can display. It also returns a metric-based CSS starting point in `suggested_css` for the two currently metric-detected issue classes (horizontal overflow and off-screen buttons). These are review suggestions, not automatically applied patches and not proof that the issue is fixed.
+
+The approval endpoint acknowledges reviewer approval only; it does not modify the target website. A fix must be applied in an isolated copy and then checked with a follow-up scan before it can honestly be described as verified. The current root scanner's automated metric detections cover horizontal overflow and off-screen buttons. Other supplied defect pages are useful demo fixtures, but their detection should not be claimed unless a corresponding finding is actually returned by the running backend.
+
+For the local demo, start the frontend from the repository root on port 5500 and the FastAPI service on port 8000. Keep Ollama running locally for the Q&A assistant. The Q&A endpoint uses scan metrics and stored scan metadata; it does not currently inspect screenshot pixels as part of its answer context.
+
 ## API Reference
 
 | Method | Endpoint | Description |
