@@ -5,6 +5,8 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
 import re
+import ipaddress
+import socket
 from pathlib import Path
 from urllib.parse import urlparse, quote
 
@@ -61,17 +63,63 @@ os.makedirs(ARTIFACT_DIR, exist_ok=True)
 # Mount artifacts directory for direct screenshot access by frontend and visual review
 app.mount("/artifacts", StaticFiles(directory=ARTIFACT_DIR), name="artifacts")
 
-# SSRF Protection: strictly allowlisted hostnames
-ALLOWED_DOMAINS = ["localhost", "127.0.0.1", "example.com"]
+# Local test pages are explicitly allowed. Public hosts are accepted only after
+# DNS/IP checks, and every browser subrequest is checked again to reduce SSRF risk.
+ALLOWED_DOMAINS = {"localhost", "127.0.0.1", "example.com"}
+LOCAL_PORTS = {5500, 8000}
+
+def _host_resolves_publicly(host: str) -> bool:
+    try:
+        literal = ipaddress.ip_address(host)
+        return literal.is_global
+    except ValueError:
+        pass
+    try:
+        answers = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+        addresses = {ipaddress.ip_address(item[4][0]) for item in answers}
+        return bool(addresses) and all(address.is_global for address in addresses)
+    except (OSError, ValueError):
+        return False
 
 def validate_target_url(url: str):
-    """Exact-host allow-list shared by scan and patch routes."""
-    parsed = urlparse(url)
-    host = (parsed.hostname or "").lower().rstrip(".")
-    if (parsed.scheme not in {"http", "https"} or host not in ALLOWED_DOMAINS
+    """Allow local demo hosts or publicly routable HTTP(S) websites only."""
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        port = parsed.port
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Enter a valid website URL.")
+    local_demo = host in ALLOWED_DOMAINS and (port is None or port in LOCAL_PORTS or port in {80, 443})
+    public_site = (
+        os.getenv("ALLOW_PUBLIC_TARGETS", "true").lower() == "true"
+        and bool(host) and "." in host and host not in {"localhost"}
+        and port in (None, 80, 443) and _host_resolves_publicly(host)
+    )
+    if (parsed.scheme not in {"http", "https"} or not parsed.netloc
             or parsed.username is not None or parsed.password is not None
-            or not parsed.netloc or parsed.port not in (None, 80, 443, 5500, 8000)):
-        raise HTTPException(status_code=400, detail="Target URL is not permitted by the configured allow-list.")
+            or not (local_demo or public_site)):
+        raise HTTPException(status_code=400, detail="Target must be a public HTTP/HTTPS website, or one of the configured local demo pages.")
+
+async def _guard_browser_request(route, root_host: str):
+    """Block browser subrequests that resolve to private, loopback or link-local IPs."""
+    request_url = route.request.url
+    parsed = urlparse(request_url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    root_is_local = root_host in {"localhost", "127.0.0.1"}
+    if parsed.scheme not in {"http", "https"}:
+        await route.abort()
+        return
+    if host in {"localhost", "127.0.0.1"}:
+        if root_is_local and host == root_host:
+            await route.continue_()
+        else:
+            await route.abort()
+        return
+    if _host_resolves_publicly(host):
+        await route.continue_()
+    else:
+        logger.warning("Blocked non-public browser subrequest host: %s", host)
+        await route.abort()
 
 # In-memory store maintained alongside SQLite for seamless backward compatibility
 SCAN_HISTORY_STORE = []
@@ -161,6 +209,8 @@ async def run_scan_worker(scan_id: str, url: str, viewports: List[str], css_patc
                 cfg = viewport_configs.get(vp, {"width": 1366, "height": 768})
                 page = await context.new_page()
                 try:
+                    root_host = (urlparse(url).hostname or "").lower().rstrip(".")
+                    await page.route("**/*", lambda route: _guard_browser_request(route, root_host))
                     await page.set_viewport_size({"width": cfg["width"], "height": cfg["height"]})
                     await navigate_with_retry(page, url)
 
