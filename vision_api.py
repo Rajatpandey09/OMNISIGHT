@@ -26,6 +26,13 @@ ARTIFACT_DIR = Path(os.getenv("ARTIFACT_DIR", "artifacts"))
 ALLOWED_TARGET_HOSTS = {"localhost", "127.0.0.1", "example.com"}
 
 
+class VisionVerifyRequest(BaseModel):
+    rescan_id: str = Field(min_length=1, max_length=64)
+    viewport: str = Field(default="mobile", pattern="^(desktop|mobile)$")
+    issue_type: str = Field(min_length=1, max_length=40)
+    element: str = Field(default="", max_length=200)
+
+
 class HealRequest(BaseModel):
     finding_index: int = Field(default=0, ge=0, le=100)
     viewport: str = Field(default="mobile", pattern="^(desktop|mobile)$")
@@ -173,4 +180,40 @@ async def heal_existing_scan(scan_id: str, payload: HealRequest, db: Session = D
         "human_approval_required": True,
         "source_page_modified": False,
         "note": "The CSS was tested only in a disposable Playwright browser context. Review and explicitly approve any real source change separately."
+    }
+
+
+@router.post("/verify/{scan_id}")
+async def verify_user_approved_patch(scan_id: str, payload: VisionVerifyRequest, db: Session = Depends(get_db)):
+    """VLM + metrics verification for a human-approved patch rescan."""
+    from vision.patches import verify_fix, combine_verdicts
+    original = _record_or_404(db, scan_id)
+    followup = _record_or_404(db, payload.rescan_id)
+    if original.url != followup.url:
+        raise HTTPException(status_code=400, detail="Follow-up scan target does not match the original scan.")
+    before = next((x for x in (original.results or []) if x.get("viewport") == payload.viewport), None)
+    after = next((x for x in (followup.results or []) if x.get("viewport") == payload.viewport), None)
+    if not before or not after:
+        raise HTTPException(status_code=422, detail="Both original and follow-up viewport captures are required.")
+    before_path = ARTIFACT_DIR / Path(str(before.get("screenshot") or "")).name
+    after_path = ARTIFACT_DIR / Path(str(after.get("screenshot") or "")).name
+    if not before_path.is_file() or not after_path.is_file():
+        raise HTTPException(status_code=404, detail="Before/after screenshot artifact is missing.")
+    metrics_fixed = _metrics_fixed(payload.issue_type, payload.element, after.get("metrics") or {})
+    check = await asyncio.to_thread(
+        verify_fix, get_provider(), before_path.read_bytes(), after_path.read_bytes(),
+        issue_type=payload.issue_type, element=payload.element, scan_id=scan_id,
+        viewport=payload.viewport, timeout=180.0
+    )
+    model_verdict = check.verdict if check.outcome == "ok" else "inconclusive"
+    final, reason = combine_verdicts(model_verdict, metrics_fixed, check.new_problems if check.outcome == "ok" else "none")
+    state = "verified_resolved" if final == "fixed" else ("verification_failed" if final == "not_fixed" else "inconclusive")
+    return {
+        "scan_id": scan_id, "rescan_id": payload.rescan_id, "viewport": payload.viewport,
+        "verification_state": state, "model_outcome": check.outcome,
+        "model_verdict": model_verdict, "model_confidence": check.confidence,
+        "model_evidence": check.evidence, "metrics_fixed": metrics_fixed,
+        "new_problems": check.new_problems, "reason": reason,
+        "before_screenshot": before_path.name, "after_screenshot": after_path.name,
+        "source_page_modified": False
     }
