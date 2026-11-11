@@ -374,31 +374,66 @@ async def rescan_with_patch(payload: RescanRequest, db: Session = Depends(get_db
     rescan_id = f"rescan-{uuid.uuid4().hex[:8]}"
     viewports = payload.viewports or ["desktop", "mobile"]
 
-    # Run browser scan with CSS patch applied
+    # Create the persistent record BEFORE invoking the worker. The worker
+    # updates an existing ScanRecord; without this row it silently produces
+    # no results, which previously caused an empty scan to be marked resolved.
+    rescan_record = ScanRecord(
+        scan_id=rescan_id,
+        url=payload.url,
+        status="pending",
+        viewports=viewports,
+        results=[]
+    )
+    db.add(rescan_record)
+    db.commit()
+    db.refresh(rescan_record)
+
     await run_scan_worker(rescan_id, payload.url, viewports, css_patch=payload.css_patch)
 
+    db.expire_all()
     record = db.query(ScanRecord).filter(ScanRecord.scan_id == rescan_id).first()
     scan_data = record.to_dict() if record else {"results": []}
+    results = scan_data.get("results") or []
 
-    # Evaluate resolution state
-    has_overflow = False
-    has_offscreen_buttons = False
-    for r in scan_data.get("results", []):
-        metrics = r.get("metrics", {})
-        if metrics.get("has_horizontal_overflow"):
-            has_overflow = True
-        for b in metrics.get("buttons", []):
-            if b.get("is_off_screen"):
-                has_offscreen_buttons = True
-
-    verification_state = "verified_resolved" if not (has_overflow or has_offscreen_buttons) else "verification_failed"
+    # Never treat an empty, failed, or partial scan as evidence of a fix.
+    complete_capture = (
+        record is not None
+        and record.status == "completed"
+        and len(results) == len(viewports)
+        and all(isinstance(item, dict) and isinstance(item.get("metrics"), dict) for item in results)
+    )
+    if not complete_capture:
+        verification_state = "inconclusive"
+    else:
+        has_overflow = any(
+            item.get("metrics", {}).get("has_horizontal_overflow") is True
+            for item in results
+        )
+        has_offscreen_buttons = any(
+            button.get("is_off_screen") is True
+            for item in results
+            for button in item.get("metrics", {}).get("buttons", [])
+        )
+        verification_state = (
+            "verified_resolved"
+            if not has_overflow and not has_offscreen_buttons
+            else "verification_failed"
+        )
 
     return {
         "rescan_id": rescan_id,
         "verification_state": verification_state,
+        "scan_status": record.status if record else "missing",
+        "captured_viewports": len(results),
+        "expected_viewports": len(viewports),
         "css_patch_applied": payload.css_patch,
         "url": payload.url,
-        "scan_data": scan_data
+        "scan_data": scan_data,
+        "message": (
+            "Patch verification completed against captured viewport metrics."
+            if verification_state == "verified_resolved"
+            else "Verification was not successful. Inspect scan_status, captured_viewports, and scan_data before making a resolution claim."
+        )
     }
 
 
