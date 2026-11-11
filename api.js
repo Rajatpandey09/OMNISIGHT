@@ -15,7 +15,7 @@ const API_BASE_URL = (() => {
     window.OmniSightAPIConfig &&
     window.OmniSightAPIConfig.baseUrl;
 
-  return globalConfig || "http://127.0.0.1:8001/api";
+  return globalConfig || "http://127.0.0.1:8000/api";
 })();
 // API client configuration
 const DEFAULT_TIMEOUT_MS = 15000;

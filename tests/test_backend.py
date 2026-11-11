@@ -208,3 +208,60 @@ def test_artifacts_endpoints():
     clean_res = client.delete("/api/artifacts/clean")
     assert clean_res.status_code == 200
     assert "deleted" in clean_res.json()["message"].lower() or "exist" in clean_res.json()["message"].lower()
+
+def test_frontend_targets_endpoint():
+    res = client.get("/api/targets")
+    assert res.status_code == 200
+    targets = res.json()
+    assert isinstance(targets, list)
+    assert len(targets) > 0
+    assert any(t["id"] == "localhost-testbed" for t in targets)
+
+def test_frontend_dashboard_endpoint():
+    res = client.get("/api/dashboard")
+    assert res.status_code == 200
+    data = res.json()
+    assert "total_scans" in data
+    assert "issues_found" in data
+    assert "verified_resolved" in data
+    assert "needs_attention" in data
+
+def test_frontend_issues_endpoint():
+    # Insert test scan with overflow and offscreen button
+    test_id = f"test-issues-{uuid.uuid4().hex[:6]}"
+    db = SessionLocal()
+    try:
+        record = ScanRecord(
+            scan_id=test_id,
+            url="http://localhost:8000",
+            status="completed",
+            results=[{
+                "viewport": "mobile",
+                "width": 390,
+                "metrics": {
+                    "has_horizontal_overflow": True,
+                    "scroll_width": 650,
+                    "buttons": [{"is_off_screen": True, "selector": "#btn-test", "text": "Test"}]
+                }
+            }]
+        )
+        db.add(record)
+        db.commit()
+    finally:
+        db.close()
+
+    res = client.get("/api/issues")
+    assert res.status_code == 200
+    issues = res.json()
+    assert isinstance(issues, list)
+    assert any(i["scan_id"] == test_id for i in issues)
+
+def test_frontend_approve_and_reject_fix():
+    res_app = client.post("/api/approve_fix", json={"issue_id": "ISSUE-123"})
+    assert res_app.status_code == 200
+    assert res_app.json()["status"] == "applied"
+
+    res_rej = client.post("/api/reject_fix", json={"issue_id": "ISSUE-123"})
+    assert res_rej.status_code == 200
+    assert res_rej.json()["status"] == "rejected"
+

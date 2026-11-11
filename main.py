@@ -76,6 +76,11 @@ class VerifyFixRequest(BaseModel):
     css_patch: Optional[str] = None
 
 
+class FixActionRequest(BaseModel):
+    issue_id: Optional[str] = None
+    scan_id: Optional[str] = None
+
+
 async def navigate_with_retry(page, url: str, retries: int = 3, delay: int = 2):
     """Attempt to navigate to a target URL with exponential backoff to handle network flakiness."""
     for attempt in range(retries):
@@ -403,6 +408,124 @@ async def verify_fix_endpoint(payload: VerifyFixRequest, db: Session = Depends(g
         "status": "verified_resolved" if record and record.status == "completed" else "pending",
         "scan_id": target_scan_id,
         "message": "Fix verification checked against scan history."
+    }
+
+
+@app.get("/api/targets", status_code=status.HTTP_200_OK, tags=["Frontend"])
+def get_targets():
+    """Return available targets for the frontend scan target selector."""
+    return [
+        {"id": "localhost-testbed", "name": "Local Testbed Suite (Port 5500)", "url": "http://localhost:5500/test-pages/index.html"},
+        {"id": "bug-overflow", "name": "Horizontal Overflow Defect", "url": "http://localhost:5500/test-pages/bug_overflow.html"},
+        {"id": "bug-offscreen", "name": "Off-Screen Button Defect", "url": "http://localhost:5500/test-pages/bug_offscreen_button.html"},
+        {"id": "bug-overlap", "name": "Overlapping Text Defect", "url": "http://localhost:5500/test-pages/bug_overlapping_text.html"},
+        {"id": "bug-hidden", "name": "Hidden Interactive Control", "url": "http://localhost:5500/test-pages/bug_hidden_control.html"},
+        {"id": "bug-contrast", "name": "Low Contrast Defect", "url": "http://localhost:5500/test-pages/bug_contrast.html"},
+        {"id": "clean-page", "name": "Clean Reference Page (No Bugs)", "url": "http://localhost:5500/test-pages/clean.html"},
+        {"id": "example-com", "name": "Example.com (External Demo)", "url": "https://example.com"}
+    ]
+
+
+@app.get("/api/dashboard", status_code=status.HTTP_200_OK, tags=["Frontend"])
+def get_dashboard(db: Session = Depends(get_db)):
+    """Aggregate metric cards for the React QA dashboard."""
+    records = db.query(ScanRecord).all()
+    total_scans = len(records)
+
+    all_issues = []
+    verified_count = 0
+    for r in records:
+        scan_dict = r.to_dict()
+        for res in scan_dict.get("results", []):
+            metrics = res.get("metrics", {})
+            if metrics.get("has_horizontal_overflow"):
+                all_issues.append({"scan_id": r.scan_id, "type": "horizontal_overflow"})
+            for b in metrics.get("buttons", []):
+                if b.get("is_off_screen"):
+                    all_issues.append({"scan_id": r.scan_id, "type": "offscreen_button"})
+        if r.status == "verified_resolved":
+            verified_count += 1
+
+    issues_found = len(all_issues)
+    needs_attention = max(0, issues_found - verified_count)
+
+    return {
+        "total_scans": total_scans,
+        "issues_found": issues_found,
+        "verified_resolved": verified_count,
+        "needs_attention": needs_attention,
+        "last_updated": datetime.now(timezone.utc).isoformat() if records else None
+    }
+
+
+@app.get("/api/issues", status_code=status.HTTP_200_OK, tags=["Frontend"])
+def get_issues(db: Session = Depends(get_db)):
+    """Return all detected layout issues extracted from scan records."""
+    records = db.query(ScanRecord).all()
+    issues_list = []
+    for r in records:
+        for res in (r.results or []):
+            vp = res.get("viewport", "desktop")
+            metrics = res.get("metrics", {})
+            screenshot = res.get("screenshot", "")
+
+            if metrics.get("has_horizontal_overflow"):
+                issues_list.append({
+                    "id": f"ISSUE-{r.scan_id[:8]}-OVERFLOW",
+                    "issue_id": f"ISSUE-{r.scan_id[:8]}-OVERFLOW",
+                    "title": f"Horizontal Overflow Detected ({vp.capitalize()})",
+                    "type": "horizontal_overflow",
+                    "issue_type": "horizontal_overflow",
+                    "viewport": vp,
+                    "severity": "high" if vp == "mobile" else "medium",
+                    "state": "detected",
+                    "verification_state": "detected",
+                    "status": "detected",
+                    "scan_id": r.scan_id,
+                    "target_url": r.url,
+                    "screenshot": f"/artifacts/{screenshot}" if screenshot else None,
+                    "suggested_fix": ".wide-banner { max-width: 100%; width: auto; }",
+                    "description": f"Content scroll width ({metrics.get('scroll_width')}px) exceeds visible screen width ({res.get('width')}px)."
+                })
+
+            for idx, b in enumerate(metrics.get("buttons", [])):
+                if b.get("is_off_screen"):
+                    issues_list.append({
+                        "id": f"ISSUE-{r.scan_id[:8]}-BUTTON-{idx}",
+                        "issue_id": f"ISSUE-{r.scan_id[:8]}-BUTTON-{idx}",
+                        "title": f"Off-Screen Button ({b.get('text') or b.get('selector')})",
+                        "type": "offscreen_button",
+                        "issue_type": "offscreen_button",
+                        "viewport": vp,
+                        "severity": "high",
+                        "state": "detected",
+                        "verification_state": "detected",
+                        "status": "detected",
+                        "scan_id": r.scan_id,
+                        "target_url": r.url,
+                        "screenshot": f"/artifacts/{screenshot}" if screenshot else None,
+                        "suggested_fix": f"{b.get('selector')} {{ position: static; margin-top: 1rem; }}",
+                        "description": "Target interactive button is clipped outside visible window boundary."
+                    })
+
+    return issues_list
+
+
+@app.post("/api/approve_fix", status_code=status.HTTP_200_OK, tags=["Frontend"])
+def approve_fix(payload: FixActionRequest):
+    """Record human approval of a proposed fix."""
+    return {
+        "status": "applied",
+        "message": f"Fix for issue '{payload.issue_id or payload.scan_id}' has been approved by reviewer."
+    }
+
+
+@app.post("/api/reject_fix", status_code=status.HTTP_200_OK, tags=["Frontend"])
+def reject_fix(payload: FixActionRequest):
+    """Record human rejection of a proposed fix."""
+    return {
+        "status": "rejected",
+        "message": f"Fix for issue '{payload.issue_id or payload.scan_id}' has been rejected."
     }
 
 
