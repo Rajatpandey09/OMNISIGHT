@@ -76,6 +76,8 @@ def _metrics_fixed(issue_type: str, selector: str, metrics: dict) -> bool | None
         return metrics.get("has_horizontal_overflow") is False
     if issue_type == "offscreen_button":
         relevant = [b for b in buttons if not selector or b.get("selector") == selector]
+        if not relevant:
+            relevant = buttons  # Model descriptions are not always literal CSS selectors.
         return bool(relevant) and not any(b.get("is_off_screen") for b in relevant)
     if issue_type == "hidden_control":
         hidden = [str(x) for x in metrics.get("hidden_controls") or []]
