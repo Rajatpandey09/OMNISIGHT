@@ -47,7 +47,7 @@ class ApiClient {
   async request(path, options = {}) {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.timeout);
     // Handle live mode
     try {
       const headers = {
@@ -223,7 +223,7 @@ class ApiClient {
 
   async analyzeScan(scanId, screenshotOnly = false) {
     const suffix = screenshotOnly ? "?screenshot_only=true" : "";
-    return this.request(`/ai/analyze/${encodeURIComponent(scanId)}${suffix}`, { method: "POST" });
+    return this.request(`/ai/analyze/${encodeURIComponent(scanId)}${suffix}`, { method: "POST", timeout: 120000 });
   }
 
   async healScan(scanId, findingIndex = 0, viewport = "mobile", maxAttempts = 2) {
