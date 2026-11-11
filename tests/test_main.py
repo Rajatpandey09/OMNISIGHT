@@ -1,14 +1,27 @@
-
+import importlib.util
 import sys
 from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "backend"))
+BACKEND = ROOT / "backend"
 
-from main import app
 
+def _load_backend_app():
+    """Load backend/main.py under its own module name, so it can't be mixed up
+    with the root main.py that other test files import as `main`."""
+    spec = importlib.util.spec_from_file_location("backend_main", BACKEND / "main.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(BACKEND))  # in case backend/main.py imports sibling modules
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(BACKEND))
+    return module.app
+
+
+app = _load_backend_app()
 client = TestClient(app)
 
 
@@ -26,6 +39,7 @@ def test_health_check():
         "service": "OmniSight Backend",
     }
 
+
 def test_scan_rejects_unauthorized_domain():
     response = client.post(
         "/api/scan",
@@ -36,6 +50,7 @@ def test_scan_rejects_unauthorized_domain():
     )
 
     assert response.status_code == 400
+
 
 def test_scan_history_endpoint():
     response = client.get("/api/scans")
