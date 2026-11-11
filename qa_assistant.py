@@ -23,6 +23,31 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=1200)
     scan_id: str = Field(min_length=1, max_length=64)
 
+def _vision_context(scan_id: str) -> list:
+    """Load persisted VLM findings when the user has run visual analysis."""
+    from pathlib import Path
+    path = Path(os.getenv("ARTIFACT_DIR", "artifacts")) / f"{scan_id}_analysis.json"
+    if not path.is_file():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return [
+            {
+                "viewport": item.get("viewport"),
+                "provider": item.get("provider"),
+                "outcome": item.get("outcome"),
+                "cannot_determine": item.get("cannot_determine"),
+                "findings": [
+                    {k: finding.get(k) for k in ("issue_type", "element", "severity", "evidence", "impact", "confidence", "status", "suggested_fix", "summary")}
+                    for finding in item.get("findings", [])[:15]
+                ],
+            }
+            for item in payload.get("analyses", [])[:4]
+        ]
+    except (OSError, json.JSONDecodeError, TypeError):
+        return []
+
+
 def _scan_context(record: ScanRecord) -> dict:
     results = record.results or []
     viewports = []
@@ -49,6 +74,7 @@ def _scan_context(record: ScanRecord) -> dict:
         "scan_status": record.status,
         "created_at": record.created_at.isoformat() if record.created_at else None,
         "viewports": viewports,
+        "vision_analyses": _vision_context(record.scan_id),
     }
 
 def _question_is_low_signal(question: str) -> bool:
@@ -153,5 +179,5 @@ async def ask_question(payload: AskRequest, db: Session = Depends(get_db)):
         "provider": "ollama",
         "model": os.getenv("VISION_QA_MODEL", os.getenv("OLLAMA_QA_MODEL", "qwen2.5vl:3b")),
         "answer": answer,
-        "evidence_scope": "selected_scan_metrics",
+        "evidence_scope": "selected_scan_metrics_and_vlm_findings" if context.get("vision_analyses") else "selected_scan_metrics",
     }
