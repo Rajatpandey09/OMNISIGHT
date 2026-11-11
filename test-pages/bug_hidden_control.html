@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defect Testbed: Hidden Interactive Control</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+    .cart-summary {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .cart-item b {
+      font-size: 1.1rem;
+      display: block;
+    }
+    .cart-item span {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+    /* Deliberate Injected Defect: Action button hidden on mobile viewports */
+    @media (max-width: 600px) {
+      .checkout-btn {
+        display: none !important;
+      }
+    }
+    .checkout-btn {
+      background: #059669;
+      color: #ffffff;
+      border: none;
+      padding: 0.75rem 1.75rem;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .info-card {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Defect Case: Hidden Interactive Control</span>
+    <h1>Shopping Cart & Order Summary</h1>
+    <p>On desktop (1366px), the checkout button is clearly visible. On mobile viewports (&le;600px), media query rules accidentally set <code>display: none</code>, leaving users unable to complete purchases.</p>
+
+    <div class="cart-summary">
+      <div class="cart-item">
+        <b>OmniSight Developer License (x1)</b>
+        <span>Billed annually &bull; Priority enterprise support</span>
+      </div>
+      <!-- Faulty control hidden on mobile -->
+      <button class="checkout-btn" id="proceed-to-checkout" type="button">Proceed to Checkout &rarr;</button>
+    </div>
+
+    <div class="info-card">
+      <h3>Expected Signal</h3>
+      <p>Mobile viewport DOM scan detects <code>.checkout-btn</code> inside <code>hidden_controls</code> list. Expected fix: <code>@media (max-width: 600px) { .checkout-btn { display: block; width: 100%; margin-top: 1rem; } }</code>.</p>
+    </div>
+  </div>
+</body>
+</html>
