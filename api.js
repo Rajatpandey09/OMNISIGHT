@@ -213,6 +213,14 @@ class ApiClient {
     });
  }
 
+  async rescanWithPatch(payload) {
+    return this.request("/rescan", { method: "POST", body: payload });
+  }
+
+  async verifyVisionPatch(scanId, payload) {
+    return this.request(`/ai/verify/${encodeURIComponent(scanId)}`, { method: "POST", body: payload });
+  }
+
   async analyzeScan(scanId, screenshotOnly = false) {
     const suffix = screenshotOnly ? "?screenshot_only=true" : "";
     return this.request(`/ai/analyze/${encodeURIComponent(scanId)}${suffix}`, { method: "POST" });
