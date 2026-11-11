@@ -417,7 +417,7 @@ async function approveAndVerifyPatch() {
     const state = verification.verification_state === "verified_resolved" ? "verified" : (verification.verification_state === "verification_failed" ? "failed" : "inconclusive");
     const after = (result.scan_data.results || []).find(item => item.viewport === viewport);
     const filename = after && after.screenshot ? String(after.screenshot).split(/[\\/]/).pop() : "";
-    const apiOrigin = window.OmniSightAPI.baseUrl.replace(/\\/api\\/?$/, "");
+    const apiOrigin = window.OmniSightAPI.baseUrl.replace(/\/api\/?$/, "");
     Object.assign(currentReview, { state:state, verification_state:verification.verification_state, verification_outcome:verification.verification_state, verification_details:verification.reason, after_screenshot:filename ? apiOrigin + "/artifacts/" + encodeURIComponent(filename) : "" });
     const id = currentReview.id || currentReview.issue_id;
     const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
