@@ -115,14 +115,14 @@ def _apply_in_isolated_browser(url: str, viewport: str, css: str, selector: str,
 
 
 @router.post("/analyze/{scan_id}")
-async def analyze_existing_scan(scan_id: str, db: Session = Depends(get_db)):
+async def analyze_existing_scan(scan_id: str, screenshot_only: bool = False, db: Session = Depends(get_db)):
     """Run the configured VLM on the actual Playwright screenshots + DOM metrics."""
     record = _record_or_404(db, scan_id)
     path = _input_file(record)
     output = ARTIFACT_DIR / f"{scan_id}_analysis.json"
     try:
         result = await asyncio.to_thread(
-            analyze_scan, get_provider(), path, output, 180.0, False
+            analyze_scan, get_provider(), path, output, 180.0, screenshot_only
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Vision analysis failed: {type(exc).__name__}: {str(exc)[:300]}")
