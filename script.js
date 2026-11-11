@@ -293,8 +293,8 @@ function navigate(page){
  const pages=["overview","scan","issues","history","review"];
  if(!pages.includes(page))return;
  currentPage=page;
- $(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
- $(".nav-link").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
+ $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+ $$(".nav-link").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
  $("#breadcrumb").textContent=({overview:"Overview",scan:"New scan",issues:"Issues",history:"Scan history",review:"Fix review"})[page];
  $("#sidebar").classList.remove("open");
  if(page==="issues")renderIssues();
