@@ -67,7 +67,7 @@
       <div class="scan-layout">
         <form class="surface scan-form" id="scanForm">
           <div class="form-step"><span>01</span><div><h2>Choose a target</h2><p>Select a configured target from your backend.</p></div></div>
-          <label class="field-label" for="target">Target website</label><select id="target" required><option value="">Loading configured targets…</option></select><p class="field-help" id="targetHelp">Targets are loaded from the connected backend in live mode.</p>
+          <label class="field-label" for="target">Choose a demo target</label><select id="target"><option value="">Select a configured test page (optional)</option></select><label class="field-label" for="customTargetUrl">Or enter any public website URL</label><input id="customTargetUrl" type="url" inputmode="url" placeholder="https://your-website.com" autocomplete="url"><p class="field-help" id="targetHelp">Enter a public HTTP/HTTPS website or choose one of the local demo pages.</p>
           <div class="form-step step-spaced"><span>02</span><div><h2>Choose viewports</h2><p>Check at least one viewport for this run.</p></div></div>
           <div class="viewport-options"><label class="viewport-option"><input type="checkbox" id="desktopViewport" checked><span class="viewport-art desktop-art">▱</span><span><b>Desktop</b><small>1366 × 768</small></span><span class="checkmark">✓</span></label><label class="viewport-option"><input type="checkbox" id="mobileViewport" checked><span class="viewport-art mobile-art">▯</span><span><b>Mobile</b><small>390 × 844</small></span><span class="checkmark">✓</span></label></div>
           <div class="notice"><span>ⓘ</span><p>Suggested fixes are not considered resolved until a follow-up scan confirms the outcome.</p></div>
