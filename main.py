@@ -15,6 +15,7 @@ from playwright.async_api import async_playwright
 from sqlalchemy.orm import Session
 
 from database import init_db, get_db, SessionLocal, ScanRecord
+from qa_assistant import router as qa_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +33,8 @@ app = FastAPI(
         "role": "Backend & Browser Automation Engineer"
     }
 )
+
+app.include_router(qa_router)
 
 # CORS middleware for local frontend dashboard communication
 app.add_middleware(
