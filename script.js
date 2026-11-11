@@ -11,7 +11,7 @@ const stateMeta={
  failed:{label:"Failed",className:"failed"},
  inconclusive:{label:"Inconclusive",className:"inconclusive"}
 };
-let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0, currentAiFindingIndex=null;
+let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0, currentAiFindingIndex=null, currentPage="overview";
 // const stateOf = (i) => String(i.state || i.verification_state || i.status || "detected").toLowerCase().replace(/[\s-]+/g, "_").includes("verified") ? "verified" : normalizeState(i.state || i.verification_state || i.status);
 function normalizeState(raw){
  const s=String(raw||"detected").toLowerCase().replace(/[\s-]+/g,"_");
@@ -292,11 +292,13 @@ function fillTargets() {
 function navigate(page){
  const pages=["overview","scan","issues","history","review"];
  if(!pages.includes(page))return;
- $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
- $$(".nav-link").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
+ currentPage=page;
+ $(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+ $(".nav-link").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
  $("#breadcrumb").textContent=({overview:"Overview",scan:"New scan",issues:"Issues",history:"Scan history",review:"Fix review"})[page];
- $("#sidebar").classList.remove("open");window.scrollTo({top:0,behavior:"smooth"});
+ $("#sidebar").classList.remove("open");
  if(page==="issues")renderIssues();
+ if(page==="review" && currentReview) window.scrollTo({top:0,behavior:"auto"});
 }
 
 async function handleScan(e) {
@@ -364,7 +366,9 @@ else actions.innerHTML = '<button class="button button-dark" id="runVisionAnalys
 
 async function runVisionAnalysis() {
   if (!currentReview || !currentReview.scan_id) return toast("This issue has no scan ID.");
-  const scanId = currentReview.scan_id, button = $("#runVisionAnalysis");
+  navigate("review");
+  const scanId = currentReview.scan_id, issueId = currentReview.id || currentReview.issue_id;
+  const button = $("#runVisionAnalysis");
   if (button) { button.disabled = true; button.textContent = "Analyzing screenshots…"; }
   try {
     const result = await window.OmniSightAPI.analyzeScan(scanId, false);
@@ -383,10 +387,19 @@ async function runVisionAnalysis() {
     const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
     if (existing) Object.assign(existing, currentReview);
     openReview(id, true);
+    navigate("review");
     setState($("#reviewState"), "success", "Vision AI analysis completed", `${analysis.viewport} viewport · ${finding.issue_type} · ${Math.round((finding.confidence || 0)*100)}% confidence. ${finding.evidence || finding.summary || "Finding loaded."} The desktop result is not applied to this mobile issue.`);
     toast("Vision findings loaded from the selected scan.");
-  } catch (error) { setState($("#reviewState"), "error", "Vision analysis failed", error.message); toast("Vision analysis failed."); }
-  finally { if (button) { button.disabled = false; button.textContent = "Analyze screenshots with Vision AI →"; } }
+  } catch (error) {
+    navigate("review");
+    const panel = $("#reviewState");
+    if (panel) setState(panel, "error", "Vision analysis failed", error.message);
+    console.error("Vision analysis failed:", error);
+    toast("Vision analysis failed: " + error.message);
+  } finally {
+    const liveButton = $("#runVisionAnalysis");
+    if (liveButton) { liveButton.disabled = false; liveButton.textContent = "Analyze screenshots with Vision AI →"; }
+  }
 }
 
 async function runIsolatedHealing() {
