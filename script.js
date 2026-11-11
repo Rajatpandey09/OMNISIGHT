@@ -308,7 +308,8 @@ async function handleScan(e) {
   const mobile = $("#mobileViewport").checked;
   const select = $("#target");
   const option = select.options[select.selectedIndex];
-  const url = option?.dataset.url || option?.value;
+  const customUrl = ($("#customTargetUrl")?.value || "").trim();
+  const url = customUrl || option?.dataset.url || option?.value;
 
   if (!desktop && !mobile) {
     $("#scanFeedback").textContent = "Select at least one viewport.";
@@ -333,10 +334,24 @@ async function handleScan(e) {
       ]
     });
 
-    $("#scanFeedback").textContent =
-      `Scan completed: ${result.scan_id || result.id || "success"}.`;
-    console.log("Scan result:", result);
-    toast("Browser scan completed.");
+    const scanId = result.scan_id || result.id;
+    if (!scanId) throw new Error("The backend did not return a scan ID.");
+    $("#scanFeedback").textContent = `Scan ${scanId} accepted. Waiting for browser captures…`;
+    let latest = result;
+    for (let attempt = 0; attempt < 90; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      latest = await window.OmniSightAPI.scan(scanId);
+      const state = String(latest.status || latest.state || "").toLowerCase();
+      if (state === "completed") break;
+      if (state === "failed" || state === "error") throw new Error(latest.error || "Browser scan failed.");
+    }
+    if (String(latest.status || latest.state || "").toLowerCase() !== "completed") {
+      throw new Error("Scan is still running. Refresh Scan history in a moment.");
+    }
+    $("#scanFeedback").textContent = `Scan completed: ${scanId}. Screenshots are ready. Open AI Q&A or Issues to inspect the results.`;
+    console.log("Completed scan:", latest);
+    await loadData();
+    toast("Browser scan and screenshot capture completed.");
   } catch (error) {
     console.error("Scan failed:", error);
     $("#scanFeedback").textContent = `Scan failed: ${error.message}`;
