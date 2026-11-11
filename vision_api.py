@@ -195,6 +195,13 @@ async def verify_user_approved_patch(scan_id: str, payload: VisionVerifyRequest,
     after = next((x for x in (followup.results or []) if x.get("viewport") == payload.viewport), None)
     if not before or not after:
         raise HTTPException(status_code=422, detail="Both original and follow-up viewport captures are required.")
+    baseline_metrics = before.get("metrics") or {}
+    if payload.issue_type == "horizontal_overflow" and baseline_metrics.get("has_horizontal_overflow") is not True:
+        return {"scan_id": scan_id, "rescan_id": payload.rescan_id, "verification_state": "inconclusive", "reason": "The original scan did not establish horizontal overflow."}
+    if payload.issue_type == "offscreen_button" and not any(b.get("is_off_screen") for b in baseline_metrics.get("buttons", [])):
+        return {"scan_id": scan_id, "rescan_id": payload.rescan_id, "verification_state": "inconclusive", "reason": "The original scan did not establish an off-screen button."}
+    if payload.issue_type == "hidden_control" and not baseline_metrics.get("hidden_controls"):
+        return {"scan_id": scan_id, "rescan_id": payload.rescan_id, "verification_state": "inconclusive", "reason": "The original scan did not establish a hidden control."}
     before_path = ARTIFACT_DIR / Path(str(before.get("screenshot") or "")).name
     after_path = ARTIFACT_DIR / Path(str(after.get("screenshot") or "")).name
     if not before_path.is_file() or not after_path.is_file():
