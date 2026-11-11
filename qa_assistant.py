@@ -4,6 +4,8 @@ The assistant can only use a selected scan record as evidence. It does not brows
 the target website, execute model output, or apply fixes.
 """
 import asyncio
+import base64
+import binascii
 import json
 import os
 import socket
@@ -22,6 +24,11 @@ router = APIRouter(prefix="/api/qa", tags=["Q&A"])
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=1200)
     scan_id: str = Field(min_length=1, max_length=64)
+
+class ScreenshotAskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=1200)
+    image_base64: str = Field(min_length=100, max_length=12_000_000)
+    mime_type: str = Field(default="image/png", pattern="^image/(png|jpeg|webp)$")
 
 def _vision_context(scan_id: str) -> list:
     """Load persisted VLM findings when the user has run visual analysis."""
@@ -147,6 +154,59 @@ def _ollama_chat(question: str, context: dict) -> str:
     if not answer:
         raise RuntimeError("Ollama returned an empty answer")
     return answer
+
+
+def _ollama_screenshot_chat(question: str, image_base64: str) -> str:
+    """Answer a question grounded in a user-uploaded screenshot using a vision model."""
+    host = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
+    model = os.getenv("VISION_QA_MODEL", os.getenv("OLLAMA_QA_MODEL", "qwen2.5vl:3b")).strip()
+    try:
+        image = base64.b64decode(image_base64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("The uploaded image is not valid base64.") from exc
+    if not image or len(image) > 8 * 1024 * 1024:
+        raise ValueError("Image must be between 1 byte and 8 MB.")
+    payload = json.dumps({
+        "model": model, "stream": False,
+        "messages": [
+            {"role": "system", "content": (
+                "You are OmniSight, a visual website QA assistant. Answer the user's exact question "
+                "using only visible evidence in the supplied screenshot. Distinguish observations "
+                "from hypotheses. Never invent page content, measurements, defects, or fixes. "
+                "If the screenshot does not show enough evidence, say what is missing."
+            )},
+            {"role": "user", "content": question, "images": [base64.b64encode(image).decode("ascii")]}
+        ],
+        "options": {"temperature": 0.1, "num_predict": 350}
+    }).encode("utf-8")
+    req = urllib.request.Request(host + "/api/chat", data=payload,
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, socket.timeout, TimeoutError) as exc:
+        raise RuntimeError(f"Cannot reach Ollama at {host}. Start Ollama on the backend host.") from exc
+    answer = (data.get("message") or {}).get("content", "").strip()
+    if not answer:
+        raise RuntimeError("Ollama returned an empty answer.")
+    return answer
+
+
+@router.post("/screenshot")
+async def ask_about_screenshot(payload: ScreenshotAskRequest):
+    """Analyze a user-provided screenshot; the image is not persisted to disk."""
+    try:
+        answer = await asyncio.to_thread(_ollama_screenshot_chat, payload.question.strip(), payload.image_base64)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    return {
+        "provider": "ollama",
+        "model": os.getenv("VISION_QA_MODEL", os.getenv("OLLAMA_QA_MODEL", "qwen2.5vl:3b")),
+        "answer": answer,
+        "evidence_scope": "user_uploaded_screenshot"
+    }
 
 @router.get("/health")
 def qa_health():
