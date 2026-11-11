@@ -213,6 +213,22 @@ class ApiClient {
     });
  }
 
+  async analyzeScan(scanId, screenshotOnly = false) {
+    const suffix = screenshotOnly ? "?screenshot_only=true" : "";
+    return this.request(`/ai/analyze/${encodeURIComponent(scanId)}${suffix}`, { method: "POST" });
+  }
+
+  async healScan(scanId, findingIndex = 0, viewport = "mobile", maxAttempts = 2) {
+    return this.request(`/ai/heal/${encodeURIComponent(scanId)}`, {
+      method: "POST",
+      body: { finding_index: findingIndex, viewport, max_attempts: maxAttempts }
+    });
+  }
+
+  async askQuestion(scanId, question) {
+    return this.request("/qa/ask", { method: "POST", body: { scan_id: scanId, question } });
+  }
+
   async verifyFix(id) {
     return this.request("/verify_fix", {
       method: "POST",
