@@ -185,6 +185,54 @@ Open `frontend/index.html` in a browser, or serve it locally:
 python -m http.server 5500
 ```
 
+## Local demo: evidence and review behaviour
+
+The root FastAPI application stores Playwright viewport screenshots in `artifacts/` and serves them at `/artifacts/<filename>`. The live issue API returns `before_screenshot` / `screenshot_url` fields that the Fix Review page can display. It also returns a metric-based CSS starting point in `suggested_css` for the two currently metric-detected issue classes (horizontal overflow and off-screen buttons). These are review suggestions, not automatically applied patches and not proof that the issue is fixed.
+
+The approval endpoint acknowledges reviewer approval only; it does not modify the target website. A fix must be applied in an isolated copy and then checked with a follow-up scan before it can honestly be described as verified. The current root scanner's automated metric detections cover horizontal overflow and off-screen buttons. Other supplied defect pages are useful demo fixtures, but their detection should not be claimed unless a corresponding finding is actually returned by the running backend.
+
+For the local demo, start the frontend from the repository root on port 5500 and the FastAPI service on port 8000. Keep Ollama running locally for both the scan-aware Q&A assistant and the vision pipeline. Q&A is grounded in scan metrics and metadata; screenshot interpretation is performed separately by the VLM analysis routes documented below.
+
+## Integrated Vision AI, Q&A and self-healing
+
+The canonical FastAPI application now exposes the existing vision modules through the same scan records created by the Playwright worker. Each viewport capture stores a bounded snapshot of the page body HTML alongside its screenshot and layout metrics.
+
+Configure local Ollama before starting the backend:
+
+```bash
+ollama pull qwen2.5vl:3b
+```
+
+Copy `.env.example` to `.env` and set:
+
+```env
+VISION_PROVIDER=ollama
+VISION_MODEL=qwen2.5vl:3b
+VISION_QA_MODEL=qwen2.5vl:3b
+OLLAMA_HOST=http://127.0.0.1:11434
+```
+
+After a scan has completed:
+
+```bash
+# Screenshot + metrics + captured HTML
+curl -X POST http://127.0.0.1:8000/api/ai/analyze/SCAN_ID
+
+# Screenshot-only audit (no metrics or HTML sent to the model)
+curl -X POST "http://127.0.0.1:8000/api/ai/analyze/SCAN_ID?screenshot_only=true"
+
+# Plan → Execute → Evaluate in a disposable browser context
+curl -X POST http://127.0.0.1:8000/api/ai/heal/SCAN_ID \
+  -H "Content-Type: application/json" \
+  -d '{"finding_index":0,"viewport":"mobile","max_attempts":2}'
+```
+
+The Fix Review screen can run VLM analysis, test an AI-generated proposal in an isolated browser, or explicitly approve a displayed CSS proposal and run a controlled patch rescan followed by VLM + metrics verification. A result is marked verified only when the model and applicable deterministic checks agree. **These browser tests do not modify the original website or repository source files.** Human review remains mandatory before any source change or GitHub commit.
+
+The scan-aware Q&A workspace is provided by `qa_assistant.py` and `qa-widget.js`. It answers questions from the selected scan's stored metrics and metadata; it is not a replacement for VLM screenshot analysis.
+
+See [original project requirement traceability](docs/ORIGINAL_PROJECT_REQUIREMENTS.md) and [API contract](docs/API_CONTRACT.md) for the exact routes, evidence requirements, known limitations and remaining original-assignment deliverables.
+
 ## API Reference
 
 | Method | Endpoint | Description |
@@ -196,6 +244,7 @@ python -m http.server 5500
 | `GET` | `/api/scans` | Retrieve persistent history of all executed scans from SQLite |
 | `DELETE` | `/api/scans/{scan_id}` | Delete scan record and associated screenshot artifacts |
 | `POST` | `/api/rescan` | Inject proposed CSS patch and re-evaluate layout to verify resolution |
+| `POST` | `/api/ai/verify/{scan_id}` | Compare original and follow-up screenshots with VLM + metrics after human-approved patch test |
 | `POST` | `/api/verify_fix` | Verify fix resolution state for frontend dashboard |
 | `GET` | `/api/artifacts` | List all stored screenshot artifacts with file sizes |
 | `DELETE` | `/api/artifacts/clean` | Delete all generated screenshot files to free local disk space |

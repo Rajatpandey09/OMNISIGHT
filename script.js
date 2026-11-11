@@ -11,7 +11,7 @@ const stateMeta={
  failed:{label:"Failed",className:"failed"},
  inconclusive:{label:"Inconclusive",className:"inconclusive"}
 };
-let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0;
+let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0, currentAiFindingIndex=null, currentPage="overview";
 // const stateOf = (i) => String(i.state || i.verification_state || i.status || "detected").toLowerCase().replace(/[\s-]+/g, "_").includes("verified") ? "verified" : normalizeState(i.state || i.verification_state || i.status);
 function normalizeState(raw){
  const s=String(raw||"detected").toLowerCase().replace(/[\s-]+/g,"_");
@@ -292,11 +292,13 @@ function fillTargets() {
 function navigate(page){
  const pages=["overview","scan","issues","history","review"];
  if(!pages.includes(page))return;
+ currentPage=page;
  $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
  $$(".nav-link").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
  $("#breadcrumb").textContent=({overview:"Overview",scan:"New scan",issues:"Issues",history:"Scan history",review:"Fix review"})[page];
- $("#sidebar").classList.remove("open");window.scrollTo({top:0,behavior:"smooth"});
+ $("#sidebar").classList.remove("open");
  if(page==="issues")renderIssues();
+ if(page==="review" && currentReview) window.scrollTo({top:0,behavior:"auto"});
 }
 
 async function handleScan(e) {
@@ -306,7 +308,8 @@ async function handleScan(e) {
   const mobile = $("#mobileViewport").checked;
   const select = $("#target");
   const option = select.options[select.selectedIndex];
-  const url = option?.dataset.url || option?.value;
+  const customUrl = ($("#customTargetUrl")?.value || "").trim();
+  const url = customUrl || option?.dataset.url || option?.value;
 
   if (!desktop && !mobile) {
     $("#scanFeedback").textContent = "Select at least one viewport.";
@@ -331,10 +334,24 @@ async function handleScan(e) {
       ]
     });
 
-    $("#scanFeedback").textContent =
-      `Scan completed: ${result.scan_id || result.id || "success"}.`;
-    console.log("Scan result:", result);
-    toast("Browser scan completed.");
+    const scanId = result.scan_id || result.id;
+    if (!scanId) throw new Error("The backend did not return a scan ID.");
+    $("#scanFeedback").textContent = `Scan ${scanId} accepted. Waiting for browser captures…`;
+    let latest = result;
+    for (let attempt = 0; attempt < 90; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      latest = await window.OmniSightAPI.scan(scanId);
+      const state = String(latest.status || latest.state || "").toLowerCase();
+      if (state === "completed") break;
+      if (state === "failed" || state === "error") throw new Error(latest.error || "Browser scan failed.");
+    }
+    if (String(latest.status || latest.state || "").toLowerCase() !== "completed") {
+      throw new Error("Scan is still running. Refresh Scan history in a moment.");
+    }
+    $("#scanFeedback").textContent = `Scan completed: ${scanId}. Screenshots are ready. Open AI Q&A or Issues to inspect the results.`;
+    console.log("Completed scan:", latest);
+    await loadData();
+    toast("Browser scan and screenshot capture completed.");
   } catch (error) {
     console.error("Scan failed:", error);
     $("#scanFeedback").textContent = `Scan failed: ${error.message}`;
@@ -349,18 +366,104 @@ function imagePanel(url,label){
  if(url)return `<figure class="screenshot-frame"><img src="${esc(url)}" alt="${esc(label)} screenshot" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="image-unavailable" hidden>Screenshot could not be loaded.</div><figcaption>${esc(label)}</figcaption></figure>`;
  return `<div class="screenshot-placeholder"><div class="placeholder-browser"><i></i><i></i><i></i></div><div class="placeholder-lines"><span></span><span></span><span></span></div><div class="placeholder-message">No screenshot supplied by the backend</div><small>${esc(label)}</small></div>`;
 }
-function openReview(id){
+function openReview(id, preservePage = false){
  const issue=data.issues.find(i=>String(i.id||i.issue_id)===String(id));if(!issue){toast("Issue details were not found in the current data.");return}
- currentReview=issue;navigate("review");
+ currentReview=issue;if(!preservePage)navigate("review");
  const state=normalizeState(issue.state||issue.verification_state||issue.status);
  const before=issue.before_screenshot||issue.screenshot_url||issue.evidence_screenshot||issue.evidence?.before_screenshot||"";
  const after=issue.after_screenshot||issue.verification_screenshot||issue.evidence?.after_screenshot||"";
- $("#reviewContent").innerHTML=`<section class="surface review-main"><div class="review-title"><div><span class="eyebrow">${esc(issue.id||issue.issue_id||"ISSUE")}  ·  ${esc(issue.type||issue.issue_type||"Finding")}</span><h2>${esc(issue.title||"Untitled issue")}</h2></div>${badge(state)}</div><p class="review-description">${esc(issue.description||issue.summary||"No description provided.")}</p><div class="review-meta">${severity(issue.severity)}<span class="meta-pill">${esc(issue.viewport||issue.viewport_size||"Viewport unknown")}</span><span class="meta-pill">Scan: ${esc(issue.scan_id||"Not supplied")}</span></div><div class="review-section"><div class="section-heading"><div><span class="eyebrow">VISUAL EVIDENCE</span><h2>Before &amp; after</h2></div><span class="mini-label">Real backend images when available</span></div><div class="comparison-grid">${imagePanel(before,"Before")}${imagePanel(after,"After / verification")}</div><p class="image-caption">Missing screenshots are shown as placeholders, never replaced with invented evidence.</p></div><div class="review-section"><span class="eyebrow">PROPOSED CHANGE</span><h2>Suggested CSS</h2><pre class="css-proposal">${esc(issue.suggested_css||issue.proposed_css||"No CSS proposal supplied by the backend.")}</pre><p class="image-caption">Review this change before approval. This UI does not apply CSS directly to the target site.</p></div><div class="review-section"><span class="eyebrow">VERIFICATION OUTCOME</span><h2>Current result</h2><div class="verification-box state-${state}"><span class="verification-icon">${state==="verified"?"✓":state==="failed"?"!":state==="inconclusive"?"?":"•"}</span><div><b>${esc(issue.verification_outcome||stateMeta[state].label)}</b><p>${esc(issue.evidence||issue.verification_details||"No additional verification details supplied.")}</p></div></div></div><div class="review-actions" id="reviewActions"></div></section><aside class="surface review-aside"><span class="eyebrow">REVIEW CHECKLIST</span><h2>Before you approve</h2><ul class="checklist"><li><span>01</span><div><b>Confirm the issue</b><small>Check the viewport and supporting evidence.</small></div></li><li><span>02</span><div><b>Inspect the CSS</b><small>Make sure the proposal is scoped and safe.</small></div></li><li><span>03</span><div><b>Verify separately</b><small>Approval is not the same as a successful fix.</small></div></li></ul><div class="human-note"><b>Human approval required</b><p>Only a successful follow-up verification may move an issue to Verified.</p></div></aside>`;
+ $("#reviewContent").innerHTML=`<section class="surface review-main"><div class="review-title"><div><span class="eyebrow">${esc(issue.id||issue.issue_id||"ISSUE")}  ·  ${esc(issue.type||issue.issue_type||"Finding")}</span><h2>${esc(issue.title||"Untitled issue")}</h2></div>${badge(state)}</div><p class="review-description">${esc(issue.description||issue.summary||"No description provided.")}</p>${issue.ai_suggested_fix?`<div class="review-section"><span class="eyebrow">VISION MODEL SUGGESTION</span><p class="review-description">${esc(issue.ai_suggested_fix)}</p><p class="image-caption">Advisory text only. The validated patch generator must produce the CSS used for isolated testing.</p></div>`:""}<div class="review-meta">${severity(issue.severity)}<span class="meta-pill">${esc(issue.viewport||issue.viewport_size||"Viewport unknown")}</span><span class="meta-pill">Scan: ${esc(issue.scan_id||"Not supplied")}</span></div><div class="review-section"><div class="section-heading"><div><span class="eyebrow">VISUAL EVIDENCE</span><h2>Before &amp; after</h2></div><span class="mini-label">Real backend images when available</span></div><div class="comparison-grid">${imagePanel(before,"Before")}${imagePanel(after,"After / verification")}</div><p class="image-caption">Missing screenshots are shown as placeholders, never replaced with invented evidence.</p></div><div class="review-section"><span class="eyebrow">PROPOSED CHANGE</span><h2>Suggested CSS</h2><pre class="css-proposal">${esc(issue.suggested_css||issue.proposed_css||"No CSS proposal supplied by the backend.")}</pre><p class="image-caption">Review this change before approval. This UI does not apply CSS directly to the target site.</p></div><div class="review-section"><span class="eyebrow">VERIFICATION OUTCOME</span><h2>Current result</h2><div class="verification-box state-${state}"><span class="verification-icon">${state==="verified"?"✓":state==="failed"?"!":state==="inconclusive"?"?":"•"}</span><div><b>${esc(issue.verification_outcome||stateMeta[state].label)}</b><p>${esc(issue.evidence||issue.verification_details||"No additional verification details supplied.")}</p></div></div></div><div id="reviewState" class="state-panel" hidden></div><div class="review-actions" id="reviewActions"></div></section><aside class="surface review-aside"><span class="eyebrow">REVIEW CHECKLIST</span><h2>Before you approve</h2><ul class="checklist"><li><span>01</span><div><b>Confirm the issue</b><small>Check the viewport and supporting evidence.</small></div></li><li><span>02</span><div><b>Inspect the CSS</b><small>Make sure the proposal is scoped and safe.</small></div></li><li><span>03</span><div><b>Verify separately</b><small>Approval is not the same as a successful fix.</small></div></li></ul><div class="human-note"><b>Human approval required</b><p>Only a successful follow-up verification may move an issue to Verified.</p></div></aside>`;
  const actions=$("#reviewActions");
-if (state === "proposed") actions.innerHTML = '<button class="button button-dark" id="approveFix">Approve proposal →</button><button class="button button-light" id="rejectFix">Reject proposal</button>';
+if (state === "proposed") actions.innerHTML = '<button class="button button-dark" id="runIsolatedHeal">Test AI fix in isolated browser →</button><button class="button button-light" id="approveAndVerify">Approve &amp; verify proposed CSS</button><button class="button button-light" id="rejectFix">Reject proposal</button><button class="text-link" id="runVisionAnalysis">Re-run VLM analysis</button>';
 else if (state === "applied") actions.innerHTML = '<button class="button button-dark" id="verifyFix">Run verification →</button>';
+else actions.innerHTML = '<button class="button button-dark" id="runVisionAnalysis">Analyze screenshots with Vision AI →</button><span class="action-note">AI proposals are tested in an isolated browser; the original site is not modified.</span>';
+}
 
- else actions.innerHTML='<span class="action-note">Available actions depend on the current backend state.</span>';
+async function runVisionAnalysis() {
+  if (!currentReview || !currentReview.scan_id) return toast("This issue has no scan ID.");
+  navigate("review");
+  const scanId = currentReview.scan_id, issueId = currentReview.id || currentReview.issue_id;
+  const button = $("#runVisionAnalysis");
+  if (button) { button.disabled = true; button.textContent = "Analyzing screenshots…"; }
+  try {
+    const result = await window.OmniSightAPI.analyzeScan(scanId, false);
+    const viewport = currentReview.viewport || "mobile";
+    const analysis = (result.analyses || []).find(item => item.viewport === viewport);
+    const findings = analysis && analysis.findings || [];
+    if (!analysis || analysis.outcome !== "ok" || !findings.length) {
+      setState($("#reviewState"), "empty", "Vision analysis completed", (analysis && analysis.error) || (analysis && analysis.outcome) || "No actionable visual finding returned.");
+      return toast("Vision analysis returned no actionable finding.");
+    }
+    const preferred = findings.findIndex(item => item.issue_type === (currentReview.type || currentReview.issue_type));
+    currentAiFindingIndex = preferred >= 0 ? preferred : 0;
+    const finding = findings[currentAiFindingIndex];
+    Object.assign(currentReview, { type:finding.issue_type, issue_type:finding.issue_type, title:finding.summary || finding.issue_type.replaceAll("_"," "), description:finding.evidence || finding.impact || "Vision model identified a possible visual defect.", severity:finding.severity, ai_suggested_fix:finding.suggested_fix || "", element:finding.element || "", state:finding.suggested_fix ? "proposed" : "detected", verification_state:"detected", evidence:"VLM confidence: " + Math.round((finding.confidence || 0)*100) + "%. " + (finding.impact || ""), aiFindingIndex:currentAiFindingIndex });
+    const id = currentReview.id || currentReview.issue_id;
+    const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
+    if (existing) Object.assign(existing, currentReview);
+    openReview(id, true);
+    navigate("review");
+    setState($("#reviewState"), "success", "Vision AI analysis completed", `${analysis.viewport} viewport · ${finding.issue_type} · ${Math.round((finding.confidence || 0)*100)}% confidence. ${finding.evidence || finding.summary || "Finding loaded."} The desktop result is not applied to this mobile issue.`);
+    toast("Vision findings loaded from the selected scan.");
+  } catch (error) {
+    navigate("review");
+    const panel = $("#reviewState");
+    if (panel) setState(panel, "error", "Vision analysis failed", error.message);
+    console.error("Vision analysis failed:", error);
+    toast("Vision analysis failed: " + error.message);
+  } finally {
+    const liveButton = $("#runVisionAnalysis");
+    if (liveButton) { liveButton.disabled = false; liveButton.textContent = "Analyze screenshots with Vision AI →"; }
+  }
+}
+
+async function runIsolatedHealing() {
+  if (!currentReview || currentReview.aiFindingIndex === undefined) return toast("Run Vision AI analysis first.");
+  const button = $("#runIsolatedHeal");
+  if (button) { button.disabled = true; button.textContent = "Testing isolated fix…"; }
+  try {
+    const result = await window.OmniSightAPI.healScan(currentReview.scan_id, currentReview.aiFindingIndex, currentReview.viewport || "mobile", 2);
+    const attempts = (result.attempts || []).map(a => "Attempt " + a.number + ": " + a.verdict + " — " + a.reason).join(" | ") || "No patch attempt was produced.";
+    const css = result.final_css ? " CSS tested: " + result.final_css : "";
+    if (result.final_css) {
+      Object.assign(currentReview, { suggested_css:result.final_css, state:"proposed", aiGeneratedSafePatch:true });
+      const id = currentReview.id || currentReview.issue_id;
+      const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
+      if (existing) Object.assign(existing, currentReview);
+      openReview(id);
+    }
+    setState($("#reviewState"), result.status === "fixed" ? "success" : "info", "Isolated browser result: " + result.status, result.message + " " + attempts + css + " Original source files were not modified; human approval is still required.");
+    toast("Isolated self-healing test: " + result.status);
+  } catch (error) { setState($("#reviewState"), "error", "Self-healing test failed", error.message); toast("Self-healing test failed."); }
+  finally { if (button) { button.disabled = false; button.textContent = "Test AI fix in isolated browser →"; } }
+}
+
+async function approveAndVerifyPatch() {
+  if (!currentReview) return;
+  const css = currentReview.suggested_css || currentReview.proposed_css || "";
+  if (!css.trim()) return toast("There is no CSS proposal to apply.");
+  if (!currentReview.scan_id || !currentReview.target_url) return toast("The original scan or target URL is missing.");
+  if (!window.confirm("Approve this CSS proposal and test it in an isolated browser? The original website files will not be modified.")) return;
+  const button = $("#approveAndVerify");
+  if (button) { button.disabled = true; button.textContent = "Applying in isolated browser…"; }
+  try {
+    const viewport = currentReview.viewport || "mobile";
+    const result = await window.OmniSightAPI.rescanWithPatch({ url:currentReview.target_url, scan_id:currentReview.scan_id, viewports:[viewport], issue_type:currentReview.type || currentReview.issue_type, css_patch:css });
+    if (!result.rescan_id || !result.scan_data || result.scan_status !== "completed") throw new Error("The follow-up scan did not complete; no fix can be verified.");
+    const verification = await window.OmniSightAPI.verifyVisionPatch(currentReview.scan_id, { rescan_id:result.rescan_id, viewport:viewport, issue_type:currentReview.type || currentReview.issue_type, element:currentReview.element || "" });
+    const state = verification.verification_state === "verified_resolved" ? "verified" : (verification.verification_state === "verification_failed" ? "failed" : "inconclusive");
+    const after = (result.scan_data.results || []).find(item => item.viewport === viewport);
+    const filename = after && after.screenshot ? String(after.screenshot).split(/[\\/]/).pop() : "";
+    const apiOrigin = window.OmniSightAPI.baseUrl.replace(/\/api\/?$/, "");
+    Object.assign(currentReview, { state:state, verification_state:verification.verification_state, verification_outcome:verification.verification_state, verification_details:verification.reason, after_screenshot:filename ? apiOrigin + "/artifacts/" + encodeURIComponent(filename) : "" });
+    const id = currentReview.id || currentReview.issue_id;
+    const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
+    if (existing) Object.assign(existing, currentReview);
+    openReview(id);
+    setState($("#reviewState"), state === "verified" ? "success" : "info", "Follow-up verification: " + verification.verification_state, verification.reason + " Model: " + verification.model_verdict + ". Metrics: " + verification.metrics_fixed + ". The target source files were not modified.");
+    toast("Follow-up verification: " + verification.verification_state);
+  } catch (error) { setState($("#reviewState"), "error", "Patch verification failed", error.message); toast("Patch verification failed."); }
+  finally { if (button) { button.disabled = false; button.textContent = "Approve & verify proposed CSS"; } }
 }
 
 async function reviewAction(action) {
@@ -413,6 +516,9 @@ document.addEventListener("click",e=>{
  if(e.target.closest("#refreshButton")){loadData();return}
  if(e.target.closest("#themeToggle")){document.body.classList.toggle("dark");return}
  if(e.target.closest("#backToIssues")){navigate("issues");return}
+ if(e.target.closest("#runVisionAnalysis")){e.preventDefault();e.stopPropagation();runVisionAnalysis();return}
+ if(e.target.closest("#runIsolatedHeal")){e.preventDefault();e.stopPropagation();runIsolatedHealing();return}
+ if(e.target.closest("#approveAndVerify")){e.preventDefault();e.stopPropagation();approveAndVerifyPatch();return}
  if(e.target.closest("#approveFix")){reviewAction("approve");return}
  if(e.target.closest("#rejectFix")){reviewAction("reject");return}
  if(e.target.closest("#verifyFix")){reviewAction("verify");return}

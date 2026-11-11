@@ -4,7 +4,11 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
+import re
+import ipaddress
+import socket
 from pathlib import Path
+from urllib.parse import urlparse, quote
 
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Depends, status
 from fastapi.responses import JSONResponse
@@ -15,6 +19,8 @@ from playwright.async_api import async_playwright
 from sqlalchemy.orm import Session
 
 from database import init_db, get_db, SessionLocal, ScanRecord
+from qa_assistant import router as qa_router
+from vision_api import router as vision_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,13 +39,22 @@ app = FastAPI(
     }
 )
 
-# CORS middleware for local frontend dashboard communication
+app.include_router(qa_router)
+app.include_router(vision_router)
+
+# Configure exact browser origins; never use wildcard CORS for a public deployment.
+_default_origins = "http://127.0.0.1:5500,http://localhost:5500"
+FRONTEND_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("FRONTEND_ORIGINS", _default_origins).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=FRONTEND_ORIGINS,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 ARTIFACT_DIR = "artifacts"
@@ -48,8 +63,63 @@ os.makedirs(ARTIFACT_DIR, exist_ok=True)
 # Mount artifacts directory for direct screenshot access by frontend and visual review
 app.mount("/artifacts", StaticFiles(directory=ARTIFACT_DIR), name="artifacts")
 
-# SSRF Protection: strictly allowlisted hostnames
-ALLOWED_DOMAINS = ["localhost", "127.0.0.1", "example.com"]
+# Local test pages are explicitly allowed. Public hosts are accepted only after
+# DNS/IP checks, and every browser subrequest is checked again to reduce SSRF risk.
+ALLOWED_DOMAINS = {"localhost", "127.0.0.1", "example.com"}
+LOCAL_PORTS = {5500, 8000}
+
+def _host_resolves_publicly(host: str) -> bool:
+    try:
+        literal = ipaddress.ip_address(host)
+        return literal.is_global
+    except ValueError:
+        pass
+    try:
+        answers = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+        addresses = {ipaddress.ip_address(item[4][0]) for item in answers}
+        return bool(addresses) and all(address.is_global for address in addresses)
+    except (OSError, ValueError):
+        return False
+
+def validate_target_url(url: str):
+    """Allow local demo hosts or publicly routable HTTP(S) websites only."""
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        port = parsed.port
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Enter a valid website URL.")
+    local_demo = host in ALLOWED_DOMAINS and (port is None or port in LOCAL_PORTS or port in {80, 443})
+    public_site = (
+        os.getenv("ALLOW_PUBLIC_TARGETS", "true").lower() == "true"
+        and bool(host) and "." in host and host not in {"localhost"}
+        and port in (None, 80, 443) and _host_resolves_publicly(host)
+    )
+    if (parsed.scheme not in {"http", "https"} or not parsed.netloc
+            or parsed.username is not None or parsed.password is not None
+            or not (local_demo or public_site)):
+        raise HTTPException(status_code=400, detail="Target must be a public HTTP/HTTPS website, or one of the configured local demo pages.")
+
+async def _guard_browser_request(route, root_host: str):
+    """Block browser subrequests that resolve to private, loopback or link-local IPs."""
+    request_url = route.request.url
+    parsed = urlparse(request_url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    root_is_local = root_host in {"localhost", "127.0.0.1"}
+    if parsed.scheme not in {"http", "https"}:
+        await route.abort()
+        return
+    if host in {"localhost", "127.0.0.1"}:
+        if root_is_local and host == root_host:
+            await route.continue_()
+        else:
+            await route.abort()
+        return
+    if _host_resolves_publicly(host):
+        await route.continue_()
+    else:
+        logger.warning("Blocked non-public browser subrequest host: %s", host)
+        await route.abort()
 
 # In-memory store maintained alongside SQLite for seamless backward compatibility
 SCAN_HISTORY_STORE = []
@@ -67,6 +137,7 @@ class RescanRequest(BaseModel):
     css_patch: str
     scan_id: Optional[str] = None
     viewports: Optional[List[str]] = ["desktop", "mobile"]
+    issue_type: Optional[str] = None
 
 
 class VerifyFixRequest(BaseModel):
@@ -138,6 +209,8 @@ async def run_scan_worker(scan_id: str, url: str, viewports: List[str], css_patc
                 cfg = viewport_configs.get(vp, {"width": 1366, "height": 768})
                 page = await context.new_page()
                 try:
+                    root_host = (urlparse(url).hostname or "").lower().rstrip(".")
+                    await page.route("**/*", lambda route: _guard_browser_request(route, root_host))
                     await page.set_viewport_size({"width": cfg["width"], "height": cfg["height"]})
                     await navigate_with_retry(page, url)
 
@@ -149,6 +222,8 @@ async def run_scan_worker(scan_id: str, url: str, viewports: List[str], css_patc
                     screenshot_filename = f"{scan_id}_{vp}.png"
                     screenshot_path = os.path.join(ARTIFACT_DIR, screenshot_filename)
                     await page.screenshot(path=screenshot_path, full_page=True)
+
+                    relevant_html = (await page.locator("body").inner_html())[:12000]
 
                     metrics = await page.evaluate("""() => {
                         const buttons = Array.from(document.querySelectorAll('button, a.btn, input[type="submit"]')).map(el => {
@@ -179,7 +254,8 @@ async def run_scan_worker(scan_id: str, url: str, viewports: List[str], css_patc
                         "width": cfg["width"],
                         "height": cfg["height"],
                         "screenshot": screenshot_filename,
-                        "metrics": metrics
+                        "metrics": metrics,
+                        "relevant_html": relevant_html
                     })
                 finally:
                     await page.close()
@@ -237,11 +313,7 @@ async def create_scan(
     By default runs asynchronously via FastAPI BackgroundTasks and returns 202 Accepted.
     If sync=True, waits for execution and returns 200 OK.
     """
-    if not any(domain in payload.url for domain in ALLOWED_DOMAINS):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Target URL is not permitted by security policies (SSRF protection)."
-        )
+    validate_target_url(payload.url)
 
     scan_identifier = payload.scan_id or f"scan-{uuid.uuid4().hex[:8]}"
     viewports = payload.viewports or ["desktop", "mobile"]
@@ -347,40 +419,92 @@ async def rescan_with_patch(payload: RescanRequest, db: Session = Depends(get_db
     Self-healing verification endpoint:
     Applies a proposed CSS patch directly into the page and rescans to verify defect resolution.
     """
-    if not any(domain in payload.url for domain in ALLOWED_DOMAINS):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Target URL is not permitted by security policies (SSRF protection)."
-        )
+    validate_target_url(payload.url)
+    if len(payload.css_patch) > 4000 or re.search(r"url\s*\(|@import|expression\s*\(|javascript:", payload.css_patch, re.I):
+        raise HTTPException(status_code=400, detail="CSS patch contains unsupported or unsafe content.")
 
     rescan_id = f"rescan-{uuid.uuid4().hex[:8]}"
     viewports = payload.viewports or ["desktop", "mobile"]
 
-    # Run browser scan with CSS patch applied
+    # Create the persistent record BEFORE invoking the worker. The worker
+    # updates an existing ScanRecord; without this row it silently produces
+    # no results, which previously caused an empty scan to be marked resolved.
+    rescan_record = ScanRecord(
+        scan_id=rescan_id,
+        url=payload.url,
+        status="pending",
+        viewports=viewports,
+        results=[]
+    )
+    db.add(rescan_record)
+    db.commit()
+    db.refresh(rescan_record)
+
     await run_scan_worker(rescan_id, payload.url, viewports, css_patch=payload.css_patch)
 
+    db.expire_all()
     record = db.query(ScanRecord).filter(ScanRecord.scan_id == rescan_id).first()
     scan_data = record.to_dict() if record else {"results": []}
+    results = scan_data.get("results") or []
 
-    # Evaluate resolution state
-    has_overflow = False
-    has_offscreen_buttons = False
-    for r in scan_data.get("results", []):
-        metrics = r.get("metrics", {})
-        if metrics.get("has_horizontal_overflow"):
-            has_overflow = True
-        for b in metrics.get("buttons", []):
-            if b.get("is_off_screen"):
-                has_offscreen_buttons = True
-
-    verification_state = "verified_resolved" if not (has_overflow or has_offscreen_buttons) else "verification_failed"
+    # Never treat an empty, failed, or partial scan as evidence of a fix.
+    complete_capture = (
+        record is not None
+        and record.status == "completed"
+        and len(results) == len(viewports)
+        and all(isinstance(item, dict) and isinstance(item.get("metrics"), dict) for item in results)
+    )
+    baseline = db.query(ScanRecord).filter(ScanRecord.scan_id == payload.scan_id).first() if payload.scan_id else None
+    baseline_results = (baseline.results or []) if baseline and baseline.status == "completed" else []
+    baseline_has_overflow = any(
+        item.get("metrics", {}).get("has_horizontal_overflow") is True
+        for item in baseline_results
+    )
+    baseline_has_offscreen = any(
+        button.get("is_off_screen") is True
+        for item in baseline_results
+        for button in item.get("metrics", {}).get("buttons", [])
+    )
+    remaining_overflow = any(
+        item.get("metrics", {}).get("has_horizontal_overflow") is True for item in results
+    )
+    remaining_offscreen = any(
+        button.get("is_off_screen") is True
+        for item in results for button in item.get("metrics", {}).get("buttons", [])
+    )
+    checks = []
+    baseline_matches_issue = True
+    if payload.issue_type == "horizontal_overflow":
+        baseline_matches_issue = baseline_has_overflow
+    elif payload.issue_type == "offscreen_button":
+        baseline_matches_issue = baseline_has_offscreen
+    elif payload.issue_type:
+        baseline_matches_issue = False
+    if baseline_has_overflow:
+        checks.append(not remaining_overflow)
+    if baseline_has_offscreen:
+        checks.append(not remaining_offscreen)
+    else:
+        baseline_matches_issue = False  # no deterministic verifier is defined for this issue type yet
+    if not complete_capture or not baseline_results or not baseline_matches_issue or not checks:
+        verification_state = "inconclusive"
+    else:
+        verification_state = "verified_resolved" if all(checks) else "verification_failed"
 
     return {
         "rescan_id": rescan_id,
         "verification_state": verification_state,
+        "scan_status": record.status if record else "missing",
+        "captured_viewports": len(results),
+        "expected_viewports": len(viewports),
         "css_patch_applied": payload.css_patch,
         "url": payload.url,
-        "scan_data": scan_data
+        "scan_data": scan_data,
+        "message": (
+            "Patch verification completed against captured viewport metrics."
+            if verification_state == "verified_resolved"
+            else "Verification was not successful. Inspect scan_status, captured_viewports, and scan_data before making a resolution claim."
+        )
     }
 
 
@@ -405,9 +529,13 @@ async def verify_fix_endpoint(payload: VerifyFixRequest, db: Session = Depends(g
         return await rescan_with_patch(rescan_req, db)
 
     return {
-        "status": "verified_resolved" if record and record.status == "completed" else "pending",
+        "status": "inconclusive" if record and record.status == "completed" else "pending",
         "scan_id": target_scan_id,
-        "message": "Fix verification checked against scan history."
+        "message": (
+            "A completed baseline scan is not proof that a fix worked. Submit the approved CSS patch to /api/rescan with the original scan_id to run a follow-up verification."
+            if record and record.status == "completed"
+            else "The original scan is not yet complete; verification cannot run."
+        )
     }
 
 
@@ -459,8 +587,8 @@ def get_dashboard(db: Session = Depends(get_db)):
 
 
 @app.get("/api/issues", status_code=status.HTTP_200_OK, tags=["Frontend"])
-def get_issues(db: Session = Depends(get_db)):
-    """Return all detected layout issues extracted from scan records."""
+def get_issues(request: Request, db: Session = Depends(get_db)):
+    """Return detected issues with frontend-compatible screenshot and CSS fields."""
     records = db.query(ScanRecord).all()
     issues_list = []
     for r in records:
@@ -468,11 +596,29 @@ def get_issues(db: Session = Depends(get_db)):
             vp = res.get("viewport", "desktop")
             metrics = res.get("metrics", {})
             screenshot = res.get("screenshot", "")
+            screenshot_url = (
+                f"{str(request.base_url).rstrip('/')}/artifacts/{quote(Path(screenshot).name)}"
+                if screenshot and (Path(ARTIFACT_DIR) / Path(screenshot).name).is_file()
+                else None
+            )
 
-            if metrics.get("has_horizontal_overflow"):
+            # If an off-screen control is already identified in this viewport,
+            # report that root cause once instead of duplicating it as generic overflow.
+            has_offscreen_control = any(
+                button.get("is_off_screen")
+                for button in metrics.get("buttons", [])
+            )
+            if metrics.get("has_horizontal_overflow") and not has_offscreen_control:
+                overflow_css = (
+                    "/* Scope this to the element causing overflow after inspecting the page. */\n"
+                    "html, body { max-width: 100%; overflow-x: clip; }\n"
+                    "/* Prefer fixing the oversized child: */\n"
+                    ".wide-banner, .wide-content { max-width: 100%; box-sizing: border-box; }"
+                )
+                issue_identifier = f"ISSUE-{r.scan_id}-{vp}-OVERFLOW"
                 issues_list.append({
-                    "id": f"ISSUE-{r.scan_id[:8]}-OVERFLOW",
-                    "issue_id": f"ISSUE-{r.scan_id[:8]}-OVERFLOW",
+                    "id": issue_identifier,
+                    "issue_id": issue_identifier,
                     "title": f"Horizontal Overflow Detected ({vp.capitalize()})",
                     "type": "horizontal_overflow",
                     "issue_type": "horizontal_overflow",
@@ -483,16 +629,25 @@ def get_issues(db: Session = Depends(get_db)):
                     "status": "detected",
                     "scan_id": r.scan_id,
                     "target_url": r.url,
-                    "screenshot": f"/artifacts/{screenshot}" if screenshot else None,
-                    "suggested_fix": ".wide-banner { max-width: 100%; width: auto; }",
+                    "screenshot": screenshot_url,
+                    "screenshot_url": screenshot_url,
+                    "before_screenshot": screenshot_url,
+                    "suggested_fix": overflow_css,
+                    "suggested_css": overflow_css,
                     "description": f"Content scroll width ({metrics.get('scroll_width')}px) exceeds visible screen width ({res.get('width')}px)."
                 })
 
             for idx, b in enumerate(metrics.get("buttons", [])):
                 if b.get("is_off_screen"):
+                    button_css = (
+                        f"{b.get('selector') or 'button'} {{ "
+                        "position: static; max-width: 100%; box-sizing: border-box; "
+                        "margin-inline: auto; }"
+                    )
+                    issue_identifier = f"ISSUE-{r.scan_id}-{vp}-BUTTON-{idx}"
                     issues_list.append({
-                        "id": f"ISSUE-{r.scan_id[:8]}-BUTTON-{idx}",
-                        "issue_id": f"ISSUE-{r.scan_id[:8]}-BUTTON-{idx}",
+                        "id": issue_identifier,
+                        "issue_id": issue_identifier,
                         "title": f"Off-Screen Button ({b.get('text') or b.get('selector')})",
                         "type": "offscreen_button",
                         "issue_type": "offscreen_button",
@@ -503,9 +658,12 @@ def get_issues(db: Session = Depends(get_db)):
                         "status": "detected",
                         "scan_id": r.scan_id,
                         "target_url": r.url,
-                        "screenshot": f"/artifacts/{screenshot}" if screenshot else None,
-                        "suggested_fix": f"{b.get('selector')} {{ position: static; margin-top: 1rem; }}",
-                        "description": "Target interactive button is clipped outside visible window boundary."
+                        "screenshot": screenshot_url,
+                        "screenshot_url": screenshot_url,
+                        "before_screenshot": screenshot_url,
+                        "suggested_fix": button_css,
+                        "suggested_css": button_css,
+                        "description": "Target interactive button is clipped outside the visible viewport boundary. This element also contributes to the page's horizontal overflow."
                     })
 
     return issues_list
@@ -513,10 +671,15 @@ def get_issues(db: Session = Depends(get_db)):
 
 @app.post("/api/approve_fix", status_code=status.HTTP_200_OK, tags=["Frontend"])
 def approve_fix(payload: FixActionRequest):
-    """Record human approval of a proposed fix."""
+    """Acknowledge reviewer approval without falsely claiming the patch was applied."""
     return {
-        "status": "applied",
-        "message": f"Fix for issue '{payload.issue_id or payload.scan_id}' has been approved by reviewer."
+        "status": "approved",
+        "applied": False,
+        "message": (
+            f"Proposal for '{payload.issue_id or payload.scan_id}' was approved by the reviewer. "
+            "No target-site files were changed by this endpoint; run an isolated patch and "
+            "follow-up verification before marking the issue resolved."
+        )
     }
 
 

@@ -47,7 +47,7 @@ class ApiClient {
   async request(path, options = {}) {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.timeout);
     // Handle live mode
     try {
       const headers = {
@@ -212,6 +212,30 @@ class ApiClient {
       body: { issue_id: id }
     });
  }
+
+  async rescanWithPatch(payload) {
+    return this.request("/rescan", { method: "POST", body: payload });
+  }
+
+  async verifyVisionPatch(scanId, payload) {
+    return this.request(`/ai/verify/${encodeURIComponent(scanId)}`, { method: "POST", body: payload });
+  }
+
+  async analyzeScan(scanId, screenshotOnly = false) {
+    const suffix = screenshotOnly ? "?screenshot_only=true" : "";
+    return this.request(`/ai/analyze/${encodeURIComponent(scanId)}${suffix}`, { method: "POST", timeout: 120000 });
+  }
+
+  async healScan(scanId, findingIndex = 0, viewport = "mobile", maxAttempts = 2) {
+    return this.request(`/ai/heal/${encodeURIComponent(scanId)}`, {
+      method: "POST",
+      body: { finding_index: findingIndex, viewport, max_attempts: maxAttempts }
+    });
+  }
+
+  async askQuestion(scanId, question) {
+    return this.request("/qa/ask", { method: "POST", body: { scan_id: scanId, question } });
+  }
 
   async verifyFix(id) {
     return this.request("/verify_fix", {
