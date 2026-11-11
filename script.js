@@ -11,7 +11,7 @@ const stateMeta={
  failed:{label:"Failed",className:"failed"},
  inconclusive:{label:"Inconclusive",className:"inconclusive"}
 };
-let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0;
+let data={scans:[],issues:[],targets:[],dashboard:null}, currentReview=null, toastTimer=null, loadGeneration=0, currentAiFindingIndex=null;
 // const stateOf = (i) => String(i.state || i.verification_state || i.status || "detected").toLowerCase().replace(/[\s-]+/g, "_").includes("verified") ? "verified" : normalizeState(i.state || i.verification_state || i.status);
 function normalizeState(raw){
  const s=String(raw||"detected").toLowerCase().replace(/[\s-]+/g,"_");
@@ -357,10 +357,48 @@ function openReview(id){
  const after=issue.after_screenshot||issue.verification_screenshot||issue.evidence?.after_screenshot||"";
  $("#reviewContent").innerHTML=`<section class="surface review-main"><div class="review-title"><div><span class="eyebrow">${esc(issue.id||issue.issue_id||"ISSUE")}  ·  ${esc(issue.type||issue.issue_type||"Finding")}</span><h2>${esc(issue.title||"Untitled issue")}</h2></div>${badge(state)}</div><p class="review-description">${esc(issue.description||issue.summary||"No description provided.")}</p><div class="review-meta">${severity(issue.severity)}<span class="meta-pill">${esc(issue.viewport||issue.viewport_size||"Viewport unknown")}</span><span class="meta-pill">Scan: ${esc(issue.scan_id||"Not supplied")}</span></div><div class="review-section"><div class="section-heading"><div><span class="eyebrow">VISUAL EVIDENCE</span><h2>Before &amp; after</h2></div><span class="mini-label">Real backend images when available</span></div><div class="comparison-grid">${imagePanel(before,"Before")}${imagePanel(after,"After / verification")}</div><p class="image-caption">Missing screenshots are shown as placeholders, never replaced with invented evidence.</p></div><div class="review-section"><span class="eyebrow">PROPOSED CHANGE</span><h2>Suggested CSS</h2><pre class="css-proposal">${esc(issue.suggested_css||issue.proposed_css||"No CSS proposal supplied by the backend.")}</pre><p class="image-caption">Review this change before approval. This UI does not apply CSS directly to the target site.</p></div><div class="review-section"><span class="eyebrow">VERIFICATION OUTCOME</span><h2>Current result</h2><div class="verification-box state-${state}"><span class="verification-icon">${state==="verified"?"✓":state==="failed"?"!":state==="inconclusive"?"?":"•"}</span><div><b>${esc(issue.verification_outcome||stateMeta[state].label)}</b><p>${esc(issue.evidence||issue.verification_details||"No additional verification details supplied.")}</p></div></div></div><div class="review-actions" id="reviewActions"></div></section><aside class="surface review-aside"><span class="eyebrow">REVIEW CHECKLIST</span><h2>Before you approve</h2><ul class="checklist"><li><span>01</span><div><b>Confirm the issue</b><small>Check the viewport and supporting evidence.</small></div></li><li><span>02</span><div><b>Inspect the CSS</b><small>Make sure the proposal is scoped and safe.</small></div></li><li><span>03</span><div><b>Verify separately</b><small>Approval is not the same as a successful fix.</small></div></li></ul><div class="human-note"><b>Human approval required</b><p>Only a successful follow-up verification may move an issue to Verified.</p></div></aside>`;
  const actions=$("#reviewActions");
-if (state === "proposed") actions.innerHTML = '<button class="button button-dark" id="approveFix">Approve proposal →</button><button class="button button-light" id="rejectFix">Reject proposal</button>';
+if (state === "proposed") actions.innerHTML = '<button class="button button-dark" id="runIsolatedHeal">Test AI fix in isolated browser →</button><button class="button button-light" id="approveFix">Record approval</button><button class="button button-light" id="rejectFix">Reject proposal</button><button class="text-link" id="runVisionAnalysis">Re-run VLM analysis</button>';
 else if (state === "applied") actions.innerHTML = '<button class="button button-dark" id="verifyFix">Run verification →</button>';
+else actions.innerHTML = '<button class="button button-dark" id="runVisionAnalysis">Analyze screenshots with Vision AI →</button><span class="action-note">AI proposals are tested in an isolated browser; the original site is not modified.</span>';
+}
 
- else actions.innerHTML='<span class="action-note">Available actions depend on the current backend state.</span>';
+async function runVisionAnalysis() {
+  if (!currentReview || !currentReview.scan_id) return toast("This issue has no scan ID.");
+  const scanId = currentReview.scan_id, button = $("#runVisionAnalysis");
+  if (button) { button.disabled = true; button.textContent = "Analyzing screenshots…"; }
+  try {
+    const result = await window.OmniSightAPI.analyzeScan(scanId, false);
+    const viewport = currentReview.viewport || "mobile";
+    const analysis = (result.analyses || []).find(item => item.viewport === viewport);
+    const findings = analysis && analysis.findings || [];
+    if (!analysis || analysis.outcome !== "ok" || !findings.length) {
+      setState($("#reviewState"), "empty", "Vision analysis completed", (analysis && analysis.error) || (analysis && analysis.outcome) || "No actionable visual finding returned.");
+      return toast("Vision analysis returned no actionable finding.");
+    }
+    const preferred = findings.findIndex(item => item.issue_type === (currentReview.type || currentReview.issue_type));
+    currentAiFindingIndex = preferred >= 0 ? preferred : 0;
+    const finding = findings[currentAiFindingIndex];
+    Object.assign(currentReview, { type:finding.issue_type, issue_type:finding.issue_type, title:finding.summary || finding.issue_type.replaceAll("_"," "), description:finding.evidence || finding.impact || "Vision model identified a possible visual defect.", severity:finding.severity, suggested_css:finding.suggested_fix || "", state:finding.suggested_fix ? "proposed" : "detected", verification_state:"detected", evidence:"VLM confidence: " + Math.round((finding.confidence || 0)*100) + "%. " + (finding.impact || ""), aiFindingIndex:currentAiFindingIndex });
+    const id = currentReview.id || currentReview.issue_id;
+    const existing = data.issues.find(item => String(item.id || item.issue_id) === String(id));
+    if (existing) Object.assign(existing, currentReview);
+    openReview(id); toast("Vision findings loaded from the selected scan.");
+  } catch (error) { setState($("#reviewState"), "error", "Vision analysis failed", error.message); toast("Vision analysis failed."); }
+  finally { if (button) { button.disabled = false; button.textContent = "Analyze screenshots with Vision AI →"; } }
+}
+
+async function runIsolatedHealing() {
+  if (!currentReview || currentReview.aiFindingIndex === undefined) return toast("Run Vision AI analysis first.");
+  const button = $("#runIsolatedHeal");
+  if (button) { button.disabled = true; button.textContent = "Testing isolated fix…"; }
+  try {
+    const result = await window.OmniSightAPI.healScan(currentReview.scan_id, currentReview.aiFindingIndex, currentReview.viewport || "mobile", 2);
+    const attempts = (result.attempts || []).map(a => "Attempt " + a.number + ": " + a.verdict + " — " + a.reason).join(" | ") || "No patch attempt was produced.";
+    const css = result.final_css ? " CSS tested: " + result.final_css : "";
+    setState($("#reviewState"), result.status === "fixed" ? "success" : "info", "Isolated browser result: " + result.status, result.message + " " + attempts + css + " Original source files were not modified; human approval is still required.");
+    toast("Isolated self-healing test: " + result.status);
+  } catch (error) { setState($("#reviewState"), "error", "Self-healing test failed", error.message); toast("Self-healing test failed."); }
+  finally { if (button) { button.disabled = false; button.textContent = "Test AI fix in isolated browser →"; } }
 }
 
 async function reviewAction(action) {
@@ -413,6 +451,8 @@ document.addEventListener("click",e=>{
  if(e.target.closest("#refreshButton")){loadData();return}
  if(e.target.closest("#themeToggle")){document.body.classList.toggle("dark");return}
  if(e.target.closest("#backToIssues")){navigate("issues");return}
+ if(e.target.closest("#runVisionAnalysis")){runVisionAnalysis();return}
+ if(e.target.closest("#runIsolatedHeal")){runIsolatedHealing();return}
  if(e.target.closest("#approveFix")){reviewAction("approve");return}
  if(e.target.closest("#rejectFix")){reviewAction("reject");return}
  if(e.target.closest("#verifyFix")){reviewAction("verify");return}
