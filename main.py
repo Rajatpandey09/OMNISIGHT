@@ -89,6 +89,7 @@ class RescanRequest(BaseModel):
     css_patch: str
     scan_id: Optional[str] = None
     viewports: Optional[List[str]] = ["desktop", "mobile"]
+    issue_type: Optional[str] = None
 
 
 class VerifyFixRequest(BaseModel):
@@ -381,7 +382,7 @@ async def rescan_with_patch(payload: RescanRequest, db: Session = Depends(get_db
     Applies a proposed CSS patch directly into the page and rescans to verify defect resolution.
     """
     validate_target_url(payload.url)
-    if len(payload.css_patch) > 4000 or re.search(r"url\\s*\\(|@import|expression\\s*\\(|javascript:", payload.css_patch, re.I):
+    if len(payload.css_patch) > 4000 or re.search(r"url\s*\(|@import|expression\s*\(|javascript:", payload.css_patch, re.I):
         raise HTTPException(status_code=400, detail="CSS patch contains unsupported or unsafe content.")
 
     rescan_id = f"rescan-{uuid.uuid4().hex[:8]}"
@@ -415,23 +416,33 @@ async def rescan_with_patch(payload: RescanRequest, db: Session = Depends(get_db
         and len(results) == len(viewports)
         and all(isinstance(item, dict) and isinstance(item.get("metrics"), dict) for item in results)
     )
-    if not complete_capture:
+    baseline = db.query(ScanRecord).filter(ScanRecord.scan_id == payload.scan_id).first() if payload.scan_id else None
+    baseline_results = (baseline.results or []) if baseline and baseline.status == "completed" else []
+    baseline_has_overflow = any(
+        item.get("metrics", {}).get("has_horizontal_overflow") is True
+        for item in baseline_results
+    )
+    baseline_has_offscreen = any(
+        button.get("is_off_screen") is True
+        for item in baseline_results
+        for button in item.get("metrics", {}).get("buttons", [])
+    )
+    remaining_overflow = any(
+        item.get("metrics", {}).get("has_horizontal_overflow") is True for item in results
+    )
+    remaining_offscreen = any(
+        button.get("is_off_screen") is True
+        for item in results for button in item.get("metrics", {}).get("buttons", [])
+    )
+    checks = []
+    if payload.issue_type == "horizontal_overflow" or (not payload.issue_type and baseline_has_overflow):
+        checks.append(not remaining_overflow)
+    if payload.issue_type == "offscreen_button" or (not payload.issue_type and baseline_has_offscreen):
+        checks.append(not remaining_offscreen)
+    if not complete_capture or not baseline_results or not checks:
         verification_state = "inconclusive"
     else:
-        has_overflow = any(
-            item.get("metrics", {}).get("has_horizontal_overflow") is True
-            for item in results
-        )
-        has_offscreen_buttons = any(
-            button.get("is_off_screen") is True
-            for item in results
-            for button in item.get("metrics", {}).get("buttons", [])
-        )
-        verification_state = (
-            "verified_resolved"
-            if not has_overflow and not has_offscreen_buttons
-            else "verification_failed"
-        )
+        verification_state = "verified_resolved" if all(checks) else "verification_failed"
 
     return {
         "rescan_id": rescan_id,
