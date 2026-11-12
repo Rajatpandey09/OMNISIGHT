@@ -1546,6 +1546,112 @@ tbody tr:last-child td {
   box-shadow: var(--shadow-xs);
 }
 
+/* ── Scan groups inside the issue list ──────────────────────────────────── */
+.scan-group {
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.scan-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 12px 20px;
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme="dark"] .scan-group-header,
+.dark .scan-group-header {
+  background: rgba(255,255,255,0.05);
+}
+
+.scan-group-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.scan-group-icon {
+  font-size: 1rem;
+  opacity: .4;
+  flex-shrink: 0;
+}
+
+.scan-group-title {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.scan-group-sub {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.scan-group-url {
+  font-size: .78rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.scan-group-url:hover { text-decoration: underline; }
+
+.scan-group-ts {
+  font-size: .73rem;
+  color: var(--text-secondary);
+  opacity: .6;
+}
+
+.scan-group-right { flex-shrink: 0; }
+
+.scan-group-count {
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+/* Issue rows inside a group: flat, no radius, no float effect */
+.scan-group-body .issue-row {
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--border);
+  box-shadow: none !important;
+  transform: none !important;
+}
+.scan-group-body .issue-row:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: var(--surface-soft);
+}
+.scan-group-body .issue-row:last-child {
+  border-bottom: 0;
+}
+/* ── end scan groups ─────────────────────────────────────────────────────── */
+
+.issues-grouped-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .issue-row {
   position: relative;
   padding: 24px;
@@ -5348,4 +5454,167 @@ html body #metricGrid.is-loading .metric-card::after {
   .metric-card:hover {
     transform: none;
   }
+}
+/* Smooth interactions */
+button,
+.card,
+.stat-card,
+.issue-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease,
+                border-color 0.25s ease;
+}
+
+.card:hover,
+.stat-card:hover,
+.issue-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+/* Custom dashboard scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #64748b transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border-radius: 20px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+/* Keyboard navigation accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ==========================================================================
+   OMNISIGHT ADDITIONS — Scan detail, comparison, category improvements
+   ========================================================================== */
+
+/* Scan detail page */
+#page-scandetail .review-title { margin-bottom: 0.75rem; }
+
+/* Compare surface */
+.compare-surface { padding: 1.5rem; }
+.compare-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+.compare-controls select {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text-main);
+  font: inherit;
+  appearance: auto;
+}
+.compare-result {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+.compare-scans-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+.compare-scans-grid > div {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.compare-summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.compare-section { margin-bottom: 1rem; }
+.compare-section h3 {
+  font-size: .875rem;
+  font-weight: 600;
+  margin-bottom: .5rem;
+}
+.compare-section ul {
+  padding-left: 1.5rem;
+  font-size: .875rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+/* Issue thumb with screenshot overlay */
+.issue-thumb { position: relative; overflow: hidden; }
+.thumb-content { position: relative; overflow: hidden; }
+
+/* Category icon size in priority-row */
+.priority-mark {
+  font-size: 1.1rem;
+  min-width: 2rem;
+  text-align: center;
+}
+
+/* Light form feedback for scan page - allow HTML content */
+.form-feedback b { color: var(--text-main); }
+.form-feedback .text-link { font-size: inherit; }
+
+/* History action column */
+#historyRows td:last-child {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Dark-mode severity adjustments for legibility */
+body.dark .severity-high { color: #FFA94D; }
+body.dark .severity-medium { color: #FFE066; }
+body.dark .severity-low { color: #69DB7C; }
+body.dark .severity-critical { color: #FF8787; }
+
+@media (max-width: 700px) {
+  .compare-scans-grid { grid-template-columns: 1fr; }
 }

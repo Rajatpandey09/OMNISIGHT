@@ -47,7 +47,7 @@ class ApiClient {
   async request(path, options = {}) {
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.timeout);
     // Handle live mode
     try {
       const headers = {
@@ -194,7 +194,8 @@ class ApiClient {
     method: "POST",
     body: {
       url: targetUrl,
-      scan_id: `scan-${Date.now()}`
+      scan_id: `scan-${Date.now()}`,
+      viewports: payload.viewports || ["desktop", "mobile"]
     }
   });
 }
@@ -213,12 +214,58 @@ class ApiClient {
     });
  }
 
+  async rescanWithPatch(payload) {
+    return this.request("/rescan", { method: "POST", body: payload });
+  }
+
+  async verifyVisionPatch(scanId, payload) {
+    return this.request(`/ai/verify/${encodeURIComponent(scanId)}`, { method: "POST", body: payload });
+  }
+
+  async analyzeScan(scanId, screenshotOnly = false) {
+    const suffix = screenshotOnly ? "?screenshot_only=true" : "";
+    return this.request(`/ai/analyze/${encodeURIComponent(scanId)}${suffix}`, { method: "POST", timeout: 240000 });
+  }
+
+  async healScan(scanId, findingIndex = 0, viewport = "mobile", maxAttempts = 2) {
+    return this.request(`/ai/heal/${encodeURIComponent(scanId)}`, {
+      method: "POST",
+      body: { finding_index: findingIndex, viewport, max_attempts: maxAttempts },
+      timeout: 300000  // heal loop: up to 3 Ollama calls + 3 Playwright runs ≈ 5 min max
+    });
+  }
+
+  async askQuestion(scanId, question) {
+    // Q&A feature removed
+    throw new Error("Q&A feature has been removed.");
+  }
+
+  async persistVerification(scanId, verificationState, rescanId = null, cssPatch = null) {
+    return this.request(`/scans/${encodeURIComponent(scanId)}/verify`, {
+      method: "PATCH",
+      body: { verification_state: verificationState, rescan_id: rescanId, css_patch: cssPatch }
+    });
+  }
+
   async verifyFix(id) {
     return this.request("/verify_fix", {
       method: "POST",
       body: { issue_id: id }
     });
  }
+
+  async compareScans(scanIdA, scanIdB) {
+    return this.request(`/compare?scan_id_a=${encodeURIComponent(scanIdA)}&scan_id_b=${encodeURIComponent(scanIdB)}`);
+  }
+
+  async exportReport(scanId) {
+    return this.request(`/report/${encodeURIComponent(scanId)}`);
+  }
+
+  async deleteScan(scanId) {
+    return this.request(`/scans/${encodeURIComponent(scanId)}`, { method: "DELETE" });
+  }
+
   // Method to override base URL (useful for testing)
   setBaseUrl(url) {
     this.baseUrl = url.endsWith("/") ? url.slice(0, -1) : url;

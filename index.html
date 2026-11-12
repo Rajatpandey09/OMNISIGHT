@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f3f4f6">
 <title>OmniSight — Visual QA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231e293b'/><circle cx='16' cy='16' r='8' fill='none' stroke='%2338bdf8' stroke-width='2.5'/><circle cx='16' cy='16' r='3' fill='%2338bdf8'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261112c">
 </head>
 <body>
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true">
@@ -67,7 +68,7 @@
       <div class="scan-layout">
         <form class="surface scan-form" id="scanForm">
           <div class="form-step"><span>01</span><div><h2>Choose a target</h2><p>Select a configured target from your backend.</p></div></div>
-          <label class="field-label" for="target">Target website</label><select id="target" required><option value="">Loading configured targets…</option></select><p class="field-help" id="targetHelp">Targets are loaded from the connected backend in live mode.</p>
+          <label class="field-label" for="target">Choose a demo target</label><select id="target"><option value="">Select a configured test page (optional)</option></select><label class="field-label" for="customTargetUrl">Or enter any public website URL</label><input id="customTargetUrl" type="url" inputmode="url" placeholder="https://your-website.com" autocomplete="url"><p class="field-help" id="targetHelp">Enter a public HTTP/HTTPS website or choose one of the local demo pages.</p>
           <div class="form-step step-spaced"><span>02</span><div><h2>Choose viewports</h2><p>Check at least one viewport for this run.</p></div></div>
           <div class="viewport-options"><label class="viewport-option"><input type="checkbox" id="desktopViewport" checked><span class="viewport-art desktop-art">▱</span><span><b>Desktop</b><small>1366 × 768</small></span><span class="checkmark">✓</span></label><label class="viewport-option"><input type="checkbox" id="mobileViewport" checked><span class="viewport-art mobile-art">▯</span><span><b>Mobile</b><small>390 × 844</small></span><span class="checkmark">✓</span></label></div>
           <div class="notice"><span>ⓘ</span><p>Suggested fixes are not considered resolved until a follow-up scan confirms the outcome.</p></div>
@@ -80,25 +81,42 @@
     <section class="page" id="page-issues">
       <div class="page-heading"><div><span class="eyebrow">FINDINGS REGISTER</span><h1>Issues, <em>in focus.</em></h1><p>Inspect evidence, severity, viewport and verification state.</p></div><div class="heading-tools"><select id="statusFilter" aria-label="Filter issues by status"><option value="all">All states</option><option value="detected">Detected</option><option value="proposed">Proposed</option><option value="applied">Applied</option><option value="verified">Verified</option><option value="failed">Failed</option><option value="inconclusive">Inconclusive</option></select></div></div>
       <div class="filter-summary"><span id="issueSummary">—</span><span class="state-key"><i class="key-dot detected"></i>Detected <i class="key-dot proposed"></i>Proposed <i class="key-dot applied"></i>Applied <i class="key-dot verified"></i>Verified <i class="key-dot failed"></i>Failed <i class="key-dot inconclusive"></i>Inconclusive</span></div>
-      <div class="surface issue-list" id="issueList"></div><div class="state-panel" id="issuesState" aria-live="polite" hidden></div>
+      <div class="issues-grouped-list" id="issueList"></div><div class="state-panel" id="issuesState" aria-live="polite" hidden></div>
     </section>
 
     <section class="page" id="page-history">
-      <div class="page-heading"><div><span class="eyebrow">SCAN ARCHIVE</span><h1>Every run, <em>accounted for.</em></h1><p>Inspect scan history and the latest available outcomes.</p></div><button class="button button-dark" data-page="scan">New scan <span>↗</span></button></div>
-      <div class="surface history-surface"><div class="table-wrap"><table><thead><tr><th>Scan ID</th><th>Target</th><th>Started</th><th>Viewports</th><th>Result</th><th>Issues</th></tr></thead><tbody id="historyRows"></tbody></table></div><div class="empty-state" id="historyEmpty" hidden>No scan history yet.</div><div class="state-panel" id="historyState" hidden></div></div>
+      <div class="page-heading"><div><span class="eyebrow">SCAN ARCHIVE</span><h1>Every run, <em>accounted for.</em></h1><p>Inspect scan history and compare results between runs.</p></div><button class="button button-dark" data-page="scan">New scan <span>↗</span></button></div>
+      <div class="surface history-surface"><div class="table-wrap"><table><thead><tr><th>Scan ID</th><th>Target</th><th>Started</th><th>Viewports</th><th>Result</th><th>Issues</th><th>Actions</th></tr></thead><tbody id="historyRows"></tbody></table></div><div class="empty-state" id="historyEmpty" hidden>No scan history yet.</div><div class="state-panel" id="historyState" hidden></div></div>
+      <div class="surface compare-surface" id="comparePanel" style="margin-top:1.5rem">
+        <div class="section-heading"><div><span class="eyebrow">COMPARE SCANS</span><h2>Diff two runs</h2></div></div>
+        <div class="compare-controls">
+          <label class="field-label" for="compareA">Scan A</label>
+          <select id="compareA"><option value="">Select scan A</option></select>
+          <label class="field-label" for="compareB">Scan B (newer)</label>
+          <select id="compareB"><option value="">Select scan B</option></select>
+          <button class="button button-dark" id="runCompareBtn">Compare scans →</button>
+        </div>
+        <div id="compareResult" class="compare-result" hidden></div>
+      </div>
     </section>
 
     <section class="page" id="page-review">
-      <div class="page-heading"><div><span class="eyebrow">HUMAN-IN-THE-LOOP</span><h1>Review the <em>proposed fix.</em></h1><p>Compare evidence, inspect the suggested CSS, and decide whether to approve.</p></div><button class="button button-light" id="backToIssues">← Back to issues</button></div>
+      <div class="page-heading"><div><span class="eyebrow">HUMAN-IN-THE-LOOP</span><h1>Review the <em>proposed fix.</em></h1><p>Compare evidence, inspect the suggested CSS, and decide whether to approve.</p></div><div style="display:flex;gap:0.75rem;align-items:center"><button class="button button-light" id="exportScanBtn" title="Export report as JSON" style="display:none">Export report ↓</button><button class="button button-light" id="backToIssues">← Back to issues</button></div></div>
       <div id="reviewState" class="state-panel" hidden></div>
       <div class="review-grid" id="reviewContent"></div>
+    </section>
+
+    <section class="page" id="page-scandetail">
+      <div class="page-heading"><div><span class="eyebrow">SCAN DETAIL</span><h1>Scan <em>evidence.</em></h1><p>Screenshots, metrics, and all captured data for this scan.</p></div><div style="display:flex;gap:0.75rem"><button class="button button-dark" id="exportDetailBtn">Export report ↓</button><button class="button button-light" id="backToHistory">← Back to history</button></div></div>
+      <div id="scanDetailContent"></div>
     </section>
     <footer class="app-footer"><span>OmniSight <i>·</i> Visual QA, with a human in control.</span><span id="footerMode">LIVE API</span></footer>
   </main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="api.js"></script>
-<script src="script.js"></script>
+<script src="config.js?v=20261112c"></script>
+<script src="api.js?v=20261112c"></script>
+<script src="script.js?v=20261112c"></script>
 <script>
 (() => {
 const bar = document.getElementById("scrollProgress");
