@@ -1,0 +1,122 @@
+{
+  "mode": "screenshot_only",
+  "rows": [
+    {
+      "case_id": "overflow_mobile",
+      "viewport": "mobile",
+      "status": "ok",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 5.18,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "overflow_desktop",
+      "viewport": "desktop",
+      "status": "ok",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 3.45,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "offscreen_button_mobile",
+      "viewport": "mobile",
+      "status": "ok",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 4.76,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "offscreen_button_desktop",
+      "viewport": "desktop",
+      "status": "ok",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 4.04,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "overlap_text_mobile",
+      "viewport": "mobile",
+      "status": "provider_error",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 178.76,
+      "provider": "ollama",
+      "error": "HTTP 502"
+    },
+    {
+      "case_id": "hidden_control_mobile",
+      "viewport": "mobile",
+      "status": "ok",
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "inconclusive": 0,
+      "seconds": 6.01,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "low_contrast_desktop",
+      "viewport": "desktop",
+      "status": "ok",
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 13.19,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "clean_mobile",
+      "viewport": "mobile",
+      "status": "ok",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 4.82,
+      "provider": "ollama",
+      "error": null
+    },
+    {
+      "case_id": "clean_desktop",
+      "viewport": "desktop",
+      "status": "ok",
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "inconclusive": 0,
+      "seconds": 3.23,
+      "provider": "ollama",
+      "error": null
+    }
+  ],
+  "totals": {
+    "tp": 3,
+    "fp": 0,
+    "fn": 1,
+    "inconclusive": 0,
+    "cases_scored": 8,
+    "cases_no_data": 0,
+    "cases_failed": 1
+  }
+}

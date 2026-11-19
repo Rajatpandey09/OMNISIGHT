@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniSight Defect Testbed Suite</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #0b1120;
+      color: #f8fafc;
+      padding: 3rem 2rem;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: #f8fafc;
+    }
+    p.lead {
+      color: #94a3b8;
+      font-size: 1.15rem;
+      margin-bottom: 2.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #38bdf8;
+    }
+    .card-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .tag-overflow { color: #f87171; }
+    .tag-button { color: #fbbf24; }
+    .tag-text { color: #c084fc; }
+    .tag-control { color: #818cf8; }
+    .tag-contrast { color: #94a3b8; }
+    .tag-clean { color: #34d399; }
+    .card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #f1f5f9;
+    }
+    .card p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+      flex-grow: 1;
+    }
+    .card a {
+      display: inline-block;
+      text-align: center;
+      background: #0f172a;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+    }
+    .card a:hover {
+      background: #38bdf8;
+      color: #0b1120;
+    }
+    .footer-note {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Member 4 &bull; QA Test Harness</span>
+    <h1>OmniSight Defect Testbed Suite</h1>
+    <p class="lead">Reproducible visual defect benchmarks designed to validate headless scanner metrics and multimodal Vision AI diagnosis.</p>
+
+    <div class="grid">
+      <!-- 1. Overflow -->
+      <div class="card">
+        <div>
+          <span class="card-tag tag-overflow">&bull; Layout Defect</span>
+          <h2>Horizontal Overflow</h2>
+          <p>650px fixed-width component that causes horizontal scroll leaks on mobile viewports (390px).</p>
+        </div>
+        <a href="bug_overflow.html">Launch Testbed &rarr;</a>
+      </div>
+
+      <!-- 2. Offscreen Button -->
+      <div class="card">
+        <div>
+          <span class="card-tag tag-button">&bull; Geometry Defect</span>
+          <h2>Off-Screen Button</h2>
+          <p>Submit button positioned at left: 450px that slips past mobile screen boundaries.</p>
+        </div>
+        <a href="bug_offscreen_button.html">Launch Testbed &rarr;</a>
+      </div>
+
+      <!-- 3. Overlapping Text -->
+      <div class="card">
+        <div>
+          <span class="card-tag tag-text">&bull; Spatial Defect</span>
+          <h2>Overlapping Text</h2>
+          <p>Headlines and paragraphs that visually collide due to conflicting coordinates.</p>
+        </div>
+        <a href="bug_overlapping_text.html">Launch Testbed &rarr;</a>
+      </div>
+
+      <!-- 4. Hidden Control -->
+      <div class="card">
+        <div>
+          <span class="card-tag tag-control">&bull; Interactive Defect</span>
+          <h2>Hidden Control</h2>
+          <p>Interactive checkout button hidden on mobile screens via media queries.</p>
+        </div>
+        <a href="bug_hidden_control.html">Launch Testbed &rarr;</a>
+      </div>
+
+      <!-- 5. Low Contrast -->
+      <div class="card">
+        <div>
+          <span class="card-tag tag-contrast">&bull; Accessibility Defect</span>
+          <h2>Low Color Contrast</h2>
+          <p>Faint text (#d1d5db) failing WCAG AA 4.5:1 minimum contrast threshold.</p>
+        </div>
+        <a href="bug_contrast.html">Launch Testbed &rarr;</a>
+      </div>
+
+      <!-- 6. Clean Page -->
+      <div class="card">
+        <div>
+          <span class="card-tag tag-clean">&bull; Negative Control</span>
+          <h2>Clean Page</h2>
+          <p>Fully responsive reference implementation with zero defects (tests false-positive suppression).</p>
+        </div>
+        <a href="clean.html">Launch Testbed &rarr;</a>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <b>Testing Instructions:</b> Serve this directory via <code>python -m http.server 5500</code>. Point OmniSight's scanner to <code>http://localhost:5500/test-pages/&lt;defect&gt;.html</code> to evaluate real-time detection and verification.
+    </div>
+  </div>
+</body>
+</html>

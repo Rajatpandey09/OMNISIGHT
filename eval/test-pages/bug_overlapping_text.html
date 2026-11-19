@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defect Testbed: Overlapping Text</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: #f3e8ff;
+      color: #6b21a8;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    h1.page-title {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    p.intro {
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+    /* Deliberate Injected Defect: Colliding text via absolute positioning */
+    .hero-banner {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2rem;
+      height: 180px;
+      margin-bottom: 2rem;
+    }
+    .hero-title {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      z-index: 1;
+    }
+    .hero-description {
+      position: absolute;
+      top: 2.25rem;
+      left: 2rem;
+      font-size: 1.1rem;
+      color: #475569;
+      line-height: 1.4;
+      max-width: 500px;
+      z-index: 2;
+    }
+    .info-card {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Defect Case: Overlapping Text</span>
+    <h1 class="page-title">Enterprise Cloud Architecture</h1>
+    <p class="intro">This defect tests multimodal vision capabilities. Standard bounding boxes can miss text collisions, but Vision AI models visually identify overlapping characters.</p>
+
+    <div class="hero-banner">
+      <!-- Colliding text elements -->
+      <h2 class="hero-title" id="hero-heading">Scale Intelligently Across Multiple Clusters</h2>
+      <p class="hero-description" id="hero-subtext">Automated node provisioning, zero-downtime canary rollouts, and deep spatial observability for Kubernetes.</p>
+    </div>
+
+    <div class="info-card">
+      <h3>Expected Signal</h3>
+      <p>Visual collision between <code>.hero-title</code> and <code>.hero-description</code> due to overlapping absolute top coordinates. Expected fix: <code>position: static; margin-bottom: 0.5rem;</code>.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defect Testbed: Off-Screen Button</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #64748b;
+      margin-bottom: 1.5rem;
+    }
+    .form-box {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      position: relative;
+      height: 280px;
+      margin-bottom: 2rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+      max-width: 320px;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+    /* Deliberate Injected Defect: Submit button fixed at left: 450px */
+    .submit-button {
+      position: absolute;
+      left: 450px;
+      top: 100px;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .info-card {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Defect Case: Off-Screen Button</span>
+    <h1>Account Profile Update</h1>
+    <p>On desktop (1366px), the submit button appears beside the inputs. On mobile (390px), the 450px offset pushes the button completely outside the viewport boundary.</p>
+
+    <div class="form-box">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" value="alex_developer" readonly>
+      </div>
+      <div class="form-group">
+        <label for="email">Work Email</label>
+        <input type="email" id="email" value="alex@infotact.in" readonly>
+      </div>
+      <!-- Faulty off-screen button on mobile -->
+      <button class="submit-button" id="save-profile-btn" type="submit">Save Changes</button>
+    </div>
+
+    <div class="info-card">
+      <h3>Expected Signal</h3>
+      <p>On mobile (width: 390px), <code>button.getBoundingClientRect().right (550px) > window.innerWidth (390px)</code>. Expected fix: <code>.submit-button { position: static; margin-top: 1rem; }</code>.</p>
+    </div>
+  </div>
+</body>
+</html>
